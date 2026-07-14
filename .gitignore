@@ -1,0 +1,21 @@
+# Maven target directories
+backend/target/
+target/
+
+# Node modules and build output
+frontend/node_modules/
+frontend/dist/
+node_modules/
+dist/
+
+# Uploads directory
+uploads/
+
+# IDE directories
+.idea/
+.vscode/
+
+# Local configuration/environment files
+*.local
+.env
+.env.*

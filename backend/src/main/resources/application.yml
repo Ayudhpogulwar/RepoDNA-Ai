@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: codedna-ai
+  datasource:
+    # MySQL Database Config (Active)
+    url: jdbc:mysql://localhost:3306/codedna?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: Sai@123456
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# Security & App Configurations
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration-ms: 86400000 # 24 hours
+  ai:
+    # Gemini API configurations. Defaults to a dummy key if not specified, 
+    # but the service will handle empty keys gracefully.
+    gemini:
+      key: AIzaSyC3fxUG4wL1xe0pGJcbvvLfJY9lss-LJzs
+      model: gemini-flash-latest
+    openai:
+      key: ${OPENAI_API_KEY:}
+      model: gpt-4o-mini
+  upload:
+    dir: C:/Users/ayudh/.gemini/antigravity/scratch/codedna-ai/uploads
