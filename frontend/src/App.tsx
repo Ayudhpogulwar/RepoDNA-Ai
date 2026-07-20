@@ -26,14 +26,14 @@ import { AdminPage } from './pages/AdminPage';
 // Protected Route Guard
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center font-semibold animate-pulse">Loading Session...</div>;
+  if (loading) return <div className="min-h-screen bg-[#111827] text-white flex items-center justify-center font-semibold animate-pulse">Loading Session...</div>;
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 // Admin Route Guard
 const AdminRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center font-semibold animate-pulse">Loading Session...</div>;
+  if (loading) return <div className="min-h-screen bg-[#111827] text-white flex items-center justify-center font-semibold animate-pulse">Loading Session...</div>;
   return user && user.role === 'ROLE_ADMIN' ? <Outlet /> : <Navigate to="/dashboard" replace />;
 };
 
@@ -53,14 +53,14 @@ const ProjectLayout = () => {
 
   if (!selectedProject || selectedProject.id !== Number(id)) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center font-semibold animate-pulse">
+      <div className="min-h-screen bg-[#111827] text-white flex items-center justify-center font-semibold animate-pulse">
         Loading Workspace...
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-[#0B0F19]">
+    <div className="flex min-h-[calc(100vh-4rem)] bg-[#111827]">
       <Sidebar />
       <main className="flex-grow p-6 lg:p-8 overflow-y-auto max-w-[calc(100vw-16rem)]">
         <Outlet />
@@ -72,7 +72,7 @@ const ProjectLayout = () => {
 // General Header+Main Layout
 const MainLayout = () => {
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-200">
+    <div className="min-h-screen bg-[#111827] text-slate-200">
       <Navbar />
       <Routes>
         <Route path="/" element={<LandingPage />} />

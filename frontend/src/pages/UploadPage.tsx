@@ -34,9 +34,27 @@ export const UploadPage: React.FC = () => {
     }
 }`);
   const [loading, setLoading] = useState(false);
+  const [folderFiles, setFolderFiles] = useState<File[]>([]);
+
+  const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setFolderFiles(filesArray);
+      
+      // Auto-set workspace name to parent folder name
+      if (filesArray.length > 0) {
+        const firstFile = filesArray[0];
+        const relativePath = firstFile.webkitRelativePath || '';
+        const folderName = relativePath.split('/')[0] || 'Uploaded Folder';
+        setName(folderName);
+        setDescription(`Local folder workspace uploaded with ${filesArray.length} files.`);
+      }
+    }
+  };
 
   const handleModeChange = (newMode: UploadMode) => {
     setMode(newMode);
+    setFolderFiles([]);
     if (newMode === 'file') {
       setName('Single File Scan');
       setDescription('DNA Scan on single file code block');
@@ -62,6 +80,46 @@ export const UploadPage: React.FC = () => {
       if (mode === 'file') {
         // Upload the pasted file content
         await uploadCode(project.id, fileName, fileContent, fileLanguage);
+      } else if (mode === 'folder' && folderFiles.length > 0) {
+        // Map extensions to language names
+        const extMap: Record<string, string> = {
+          'java': 'Java',
+          'py': 'Python',
+          'js': 'JavaScript',
+          'jsx': 'JavaScript React',
+          'ts': 'TypeScript',
+          'tsx': 'TypeScript React',
+          'xml': 'XML',
+          'yml': 'YAML',
+          'yaml': 'YAML',
+          'json': 'JSON',
+          'md': 'Markdown',
+          'html': 'HTML',
+          'css': 'CSS',
+          'cpp': 'C++',
+          'c': 'C',
+          'h': 'C/C++ Header',
+          'dockerfile': 'Dockerfile'
+        };
+
+        for (const file of folderFiles) {
+          try {
+            const content = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(reader.error);
+              reader.readAsText(file);
+            });
+            
+            const ext = file.name.substring(file.name.lastIndexOf('.') + 1).toLowerCase();
+            const lang = extMap[ext] || 'Plain Text';
+            const relativePath = file.webkitRelativePath || file.name;
+            
+            await uploadCode(project.id, relativePath, content, lang);
+          } catch (err) {
+            console.error(`Failed to read file: ${file.name}`, err);
+          }
+        }
       }
       
       // Trigger analysis
@@ -76,7 +134,7 @@ export const UploadPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0F19] p-6 lg:p-8 flex flex-col items-center justify-center relative">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-6 lg:p-8 flex flex-col items-center justify-center relative">
       <div className="glow-primary top-[15%] left-[10%]" />
       <div className="glow-secondary bottom-[15%] right-[10%]" />
 
@@ -164,20 +222,29 @@ export const UploadPage: React.FC = () => {
                   <div className="p-8 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-center space-y-4">
                     <UploadCloud className="w-12 h-12 text-slate-500 mx-auto" />
                     <div>
-                      <h4 className="font-semibold text-white">Select Folder or ZIP file</h4>
-                      <p className="text-xs text-slate-500 mt-1">Drag and drop code files or select project zip from disk</p>
+                      <h4 className="font-semibold text-white">Select Folder</h4>
+                      {folderFiles.length > 0 ? (
+                        <p className="text-xs text-emerald-400 mt-1">✓ {folderFiles.length} files selected in "{name}" folder</p>
+                      ) : (
+                        <p className="text-xs text-slate-500 mt-1">Drag and drop code files or select project directory from disk</p>
+                      )}
                     </div>
                     <input 
                       type="file" 
                       id="folder-upload" 
                       className="hidden" 
-                      onChange={(e) => setName(e.target.files?.[0]?.name.replace('.zip','') || 'Uploaded Folder')}
+                      {...({
+                        webkitdirectory: "",
+                        directory: "",
+                        multiple: true
+                      } as any)}
+                      onChange={handleFolderChange}
                     />
                     <label 
                       htmlFor="folder-upload" 
                       className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-4 py-2 rounded-lg cursor-pointer border border-white/5 transition-colors"
                     >
-                      Browse Files
+                      Browse Folder
                     </label>
                   </div>
                 )}

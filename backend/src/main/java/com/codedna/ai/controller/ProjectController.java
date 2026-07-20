@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
+import com.codedna.ai.repository.SecurityReportRepository;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -24,17 +25,20 @@ public class ProjectController {
     private final ProjectFileRepository projectFileRepository;
     private final UserRepository userRepository;
     private final AnalysisRunRepository analysisRunRepository;
+    private final SecurityReportRepository securityReportRepository;
 
     public ProjectController(
             ProjectRepository projectRepository, 
             ProjectFileRepository projectFileRepository, 
             UserRepository userRepository,
-            AnalysisRunRepository analysisRunRepository
+            AnalysisRunRepository analysisRunRepository,
+            SecurityReportRepository securityReportRepository
     ) {
         this.projectRepository = projectRepository;
         this.projectFileRepository = projectFileRepository;
         this.userRepository = userRepository;
         this.analysisRunRepository = analysisRunRepository;
+        this.securityReportRepository = securityReportRepository;
     }
 
     public static class CreateProjectRequest {
@@ -59,7 +63,50 @@ public class ProjectController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(projectRepository.findByUserOrderByCreatedAtDesc(user));
+        List<Project> projects = projectRepository.findByUserOrderByCreatedAtDesc(user);
+
+        for (Project p : projects) {
+            if (p.getHealthScore() == null || p.getHealthScore() <= 10 || p.getSecurityScore() == null || p.getSecurityScore() <= 0) {
+                recalculateProjectScores(p);
+            }
+        }
+
+        return ResponseEntity.ok(projects);
+    }
+
+    private void recalculateProjectScores(Project project) {
+        List<ProjectFile> files = projectFileRepository.findByProject(project);
+        int totalFiles = files.size();
+        if (totalFiles == 0) {
+            project.setHealthScore(85);
+            project.setSecurityScore(90);
+        } else {
+            int secScore = 80;
+            var secReportOpt = securityReportRepository.findByProject(project);
+            if (secReportOpt.isPresent()) {
+                String issuesFound = secReportOpt.get().getIssuesFound();
+                int highCount = 0, medCount = 0, lowCount = 0;
+                if (issuesFound != null) {
+                    if (issuesFound.contains("HIGH")) highCount += 2;
+                    if (issuesFound.contains("MEDIUM")) medCount += 2;
+                    if (issuesFound.contains("LOW")) lowCount += 2;
+                }
+                double weightedIssues = (highCount * 8.0) + (medCount * 3.0) + (lowCount * 1.0);
+                double fileScale = Math.max(1.0, Math.sqrt(totalFiles));
+                secScore = (int) Math.round(100.0 - (weightedIssues / fileScale));
+                secScore = Math.max(25, Math.min(100, secScore));
+            } else {
+                long loc = files.stream().mapToLong(f -> f.getContent() != null ? f.getContent().split("\n").length : 10).sum();
+                secScore = (int) Math.max(50, 95 - (loc / 50));
+            }
+            project.setSecurityScore(secScore);
+
+            int avgComplexity = (int) files.stream().mapToInt(f -> f.getComplexity() != null ? f.getComplexity() : 1).average().orElse(1);
+            int complexityScore = Math.max(20, 100 - (avgComplexity * 5));
+            int health = (int) Math.round((secScore * 0.4) + (complexityScore * 0.4) + (18.0));
+            project.setHealthScore(Math.max(25, Math.min(100, health)));
+        }
+        projectRepository.save(project);
     }
 
     @GetMapping("/{id}")

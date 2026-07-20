@@ -124,6 +124,29 @@ public class OwnerController {
         </dependency>
     </dependencies>
 </project>`;
+        } else if (found.filePath.endsWith('.js') || found.filePath.endsWith('.jsx') || found.filePath.endsWith('.ts') || found.filePath.endsWith('.tsx') || found.filePath.endsWith('.json')) {
+          content = `// React/JavaScript Component Example
+import React, { useState } from 'react';
+
+export const UserProfile = ({ username, role }) => {
+  const [active, setActive] = useState(true);
+
+  // Security warning: passing raw token in query string
+  const fetchSecrets = () => {
+    fetch('/api/secrets?token=supersecret123456');
+  };
+
+  return (
+    <div className="p-4 bg-slate-900 border border-white/5 rounded-xl">
+      <h3 className="text-white font-bold">{username}</h3>
+      <p className="text-slate-400 text-xs">{role}</p>
+      <button onClick={fetchSecrets} className="mt-2 text-indigo-400">
+        Load Secrets
+      </button>
+    </div>
+  );
+};
+export default UserProfile;`;
         } else {
           content = `# application properties configurations
 server.port=8081
@@ -136,6 +159,20 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
       }
     }
     setAiExplanation('Click "Explain Code" below to generate AI code analysis.');
+  };
+
+  const getMonacoLanguage = (lang: string) => {
+    if (!lang) return 'javascript';
+    const l = lang.toLowerCase();
+    if (l.includes('javascript') || l.includes('js')) return 'javascript';
+    if (l.includes('typescript') || l.includes('ts')) return 'typescript';
+    if (l.includes('python') || l === 'py') return 'python';
+    if (l.includes('java')) return 'java';
+    if (l.includes('xml')) return 'xml';
+    if (l.includes('json')) return 'json';
+    if (l.includes('html')) return 'html';
+    if (l.includes('css')) return 'css';
+    return l;
   };
 
   const handleExplainCode = async () => {
@@ -253,7 +290,7 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
               <Editor
                 height="100%"
                 theme="vs-dark"
-                language={selectedFile.language.toLowerCase()}
+                language={getMonacoLanguage(selectedFile.language)}
                 value={editorContent}
                 onChange={(val) => setEditorContent(val || '')}
                 options={{

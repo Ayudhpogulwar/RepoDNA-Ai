@@ -359,4 +359,71 @@ public class VisualizationService {
             API-->>Developer: 200 OK (Projects JSON)
         """;
     }
+
+    public static class TechDebtItem {
+        public String filePath;
+        public String fileName;
+        public String language;
+        public int linesOfCode;
+        public int complexity;
+        public int debtScore;
+        public String debtLevel;
+        public String riskCategory;
+        public String recommendation;
+
+        public TechDebtItem(String filePath, String fileName, String language, int loc, int complexity, int debtScore, String debtLevel, String riskCategory, String recommendation) {
+            this.filePath = filePath;
+            this.fileName = fileName;
+            this.language = language;
+            this.linesOfCode = loc;
+            this.complexity = complexity;
+            this.debtScore = debtScore;
+            this.debtLevel = debtLevel;
+            this.riskCategory = riskCategory;
+            this.recommendation = recommendation;
+        }
+    }
+
+    public List<TechDebtItem> calculateTechnicalDebtHeatmap(List<ProjectFile> files) {
+        List<TechDebtItem> debtItems = new ArrayList<>();
+
+        for (ProjectFile file : files) {
+            String content = file.getContent() != null ? file.getContent() : "";
+            int loc = content.isEmpty() ? 10 : content.split("\n").length;
+            int complexity = file.getComplexity() > 0 ? file.getComplexity() : 1;
+
+            int score = 0;
+            score += Math.min(40, (loc / 25) * 5);
+            score += Math.min(40, complexity * 6);
+
+            if (content.contains("SELECT") && content.contains("+")) score += 25;
+            if (content.toLowerCase().contains("password") || content.toLowerCase().contains("secret")) score += 20;
+            if (content.contains("catch (Exception") || content.contains("catch (e)")) score += 10;
+
+            score = Math.min(100, Math.max(10, score));
+
+            String level = "LOW";
+            String category = "Clean Code";
+            String rec = "Logic paths are well-balanced.";
+
+            if (score >= 75) {
+                level = "CRITICAL";
+                category = "Security & Refactoring Risk";
+                rec = "High cyclomatic complexity and risk flags. Immediate refactoring recommended.";
+            } else if (score >= 50) {
+                level = "HIGH";
+                category = "Maintainability Bottleneck";
+                rec = "Decompose methods into smaller functions to improve testability.";
+            } else if (score >= 30) {
+                level = "MEDIUM";
+                category = "Code Quality Smell";
+                rec = "Consider adding inline docstrings and unit tests.";
+            }
+
+            debtItems.add(new TechDebtItem(file.getFilePath(), file.getFileName(), file.getLanguage(), loc, complexity, score, level, category, rec));
+        }
+
+        debtItems.sort((a, b) -> Integer.compare(b.debtScore, a.debtScore));
+        return debtItems;
+    }
 }

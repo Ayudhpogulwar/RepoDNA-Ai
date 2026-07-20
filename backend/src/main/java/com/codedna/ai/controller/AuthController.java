@@ -51,12 +51,14 @@ public class AuthController {
         private String username;
         private String email;
         private String role;
+        private Long id;
 
-        public AuthResponse(String token, String username, String email, String role) {
+        public AuthResponse(String token, String username, String email, String role, Long id) {
             this.token = token;
             this.username = username;
             this.email = email;
             this.role = role;
+            this.id = id;
         }
 
         public String getToken() { return token; }
@@ -67,6 +69,8 @@ public class AuthController {
         public void setEmail(String email) { this.email = email; }
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
     }
 
     @PostMapping("/register")
@@ -89,7 +93,7 @@ public class AuthController {
         userRepository.save(user);
         
         String token = jwtUtil.generateToken(user.getUsername());
-        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole()));
+        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole(), user.getId()));
     }
 
     @PostMapping("/login")
@@ -102,7 +106,7 @@ public class AuthController {
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
-        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole()));
+        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole(), user.getId()));
     }
 
     @GetMapping("/me")

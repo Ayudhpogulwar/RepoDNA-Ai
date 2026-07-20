@@ -36,7 +36,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#0B0F19] px-6">
+    <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#111827] px-6">
       {/* Background neons */}
       <div className="glow-primary top-[20%] left-[25%]" />
       <div className="glow-secondary bottom-[20%] right-[25%]" />
@@ -47,7 +47,7 @@ export const LoginPage: React.FC = () => {
           <div className="mx-auto w-12 h-12 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
             <Dna className="w-6 h-6 animate-pulse" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Sign In to CodeDNA</h2>
+          <h2 className="text-2xl font-bold text-white">Sign In to RepoDNA-Ai</h2>
           <p className="text-xs text-slate-500">Access your security scanners and code visualizers</p>
         </div>
 
@@ -101,7 +101,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         <div className="text-center text-xs text-slate-500 pt-2">
-          New to CodeDNA?{' '}
+          New to RepoDNA-Ai?{' '}
           <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
             Create an Account
           </Link>

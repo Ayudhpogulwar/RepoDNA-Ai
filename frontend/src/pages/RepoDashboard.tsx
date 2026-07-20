@@ -89,6 +89,23 @@ export const RepoDashboard: React.FC = () => {
     };
   });
 
+  const formatMarkdownText = (text: string) => {
+    if (!text) return '';
+    // 1. Remove markdown horizontal rules (---)
+    let formatted = text.replace(/^-{3,}\s*$/gm, '');
+    
+    // 2. Remove headers syntax (## or ###) but keep the text
+    formatted = formatted.replace(/^#+\s*(.*)$/gm, '$1');
+
+    // 3. Remove bold indicators (**)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
+
+    // 4. Clean up lists (convert leading "- " or "* " to bullet points "• ")
+    formatted = formatted.replace(/^[-*]\s+/gm, '• ');
+
+    return formatted;
+  };
+
   return (
     <div className="space-y-8">
       {/* Workspace Header */}
@@ -353,7 +370,7 @@ export const RepoDashboard: React.FC = () => {
             />
           ) : (
             <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap">
-              {selectedProject.summary || 'Summary is compiling... Check progress.'}
+              {formatMarkdownText(selectedProject.summary || 'Summary is compiling... Check progress.')}
             </div>
           )}
         </GlassCard>
@@ -406,7 +423,7 @@ export const RepoDashboard: React.FC = () => {
             />
           ) : (
             <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap bg-slate-950/45 p-4 rounded-xl border border-white/5 font-mono text-xs">
-              {selectedProject.learningRoadmap || 'Roadmap is compiling... Check progress.'}
+              {formatMarkdownText(selectedProject.learningRoadmap || 'Roadmap is compiling... Check progress.')}
             </div>
           )}
         </GlassCard>

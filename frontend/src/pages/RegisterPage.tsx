@@ -29,7 +29,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#0B0F19] px-6">
+    <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#111827] px-6">
       {/* Background neons */}
       <div className="glow-primary top-[20%] right-[25%]" />
       <div className="glow-secondary bottom-[20%] left-[25%]" />
@@ -76,7 +76,7 @@ export const RegisterPage: React.FC = () => {
               <input
                 type="email"
                 required
-                placeholder="dev@codedna.ai"
+                placeholder="dev@repodna.ai"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-transparent text-sm w-full outline-none placeholder-slate-600"

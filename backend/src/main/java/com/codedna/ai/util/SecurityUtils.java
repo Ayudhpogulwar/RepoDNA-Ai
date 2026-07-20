@@ -5,7 +5,10 @@ import com.codedna.ai.model.User;
 
 public class SecurityUtils {
     public static boolean isAuthorized(Project project, User user) {
-        // Bypass ownership verification for local developer testing to prevent multi-session 403 Forbidden errors
-        return true;
+        if (user == null) return false;
+        if ("ROLE_ADMIN".equals(user.getRole())) {
+            return true;
+        }
+        return project.getUser() != null && project.getUser().getId().equals(user.getId());
     }
 }

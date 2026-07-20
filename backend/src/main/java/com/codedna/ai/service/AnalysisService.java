@@ -116,14 +116,33 @@ public class AnalysisService {
 
     private Project analyzeLocalPath(Project project, File dir, String geminiKey, String openaiKey, String devLevel) throws Exception {
         Long id = project.getId();
+        List<ProjectFile> files;
 
-        // Clean up previous run's data to prevent database constraint violations
-        deleteExistingProjectData(project);
+        if (project.getType() == Project.ProjectType.REPOSITORY) {
+            // Clean up previous run's data to prevent database constraint violations
+            deleteExistingProjectData(project);
 
-        // 1. Scan and read file structure
-        projectAnalysisProgress.put(id, "Reading Files and Detecting Languages... (30%)");
-        List<ProjectFile> files = fileAnalyzerService.analyzeProjectFiles(project, dir);
-        projectFileRepository.saveAll(files);
+            // 1. Scan and read file structure from cloned repository
+            projectAnalysisProgress.put(id, "Reading Files and Detecting Languages... (30%)");
+            files = fileAnalyzerService.analyzeProjectFiles(project, dir);
+            projectFileRepository.saveAll(files);
+        } else {
+            // For FOLDER and FILE projects, files are uploaded directly via REST API.
+            // Load them from the database instead of scanning the backend root dir.
+            projectAnalysisProgress.put(id, "Reading Uploaded Files... (30%)");
+            files = projectFileRepository.findByProject(project);
+
+            // Clean up old reports and dependencies (but preserve the files!)
+            sbomReportRepository.findByProject(project).ifPresent(sbomReportRepository::delete);
+            securityReportRepository.findByProject(project).ifPresent(securityReportRepository::delete);
+            List<Dependency> dependencies = dependencyRepository.findByProject(project);
+            if (!dependencies.isEmpty()) {
+                dependencyRepository.deleteAll(dependencies);
+            }
+            sbomReportRepository.flush();
+            securityReportRepository.flush();
+            dependencyRepository.flush();
+        }
 
         // 2. Parse dependencies
         projectAnalysisProgress.put(id, "Finding Dependencies and Generating SBOM... (50%)");
@@ -201,10 +220,13 @@ public class AnalysisService {
         // Update overall metrics
         project.setSecurityScore(securityReport.getScore());
         
-        // Calculate health score: Average of complexity (estimated), security, and code quality
+        // Calculate health score: 40% Security + 40% Complexity/Maintainability + 20% Code Structure
         int avgComplexity = (int) files.stream().mapToInt(ProjectFile::getComplexity).average().orElse(1);
-        int complexityPenalty = Math.min(30, avgComplexity * 2);
-        int health = Math.max(10, securityReport.getScore() - complexityPenalty);
+        int complexityScore = Math.max(20, 100 - (avgComplexity * 5));
+        int structureScore = !files.isEmpty() ? 90 : 70;
+        
+        int health = (int) Math.round((securityReport.getScore() * 0.4) + (complexityScore * 0.4) + (structureScore * 0.2));
+        health = Math.max(20, Math.min(100, health));
         project.setHealthScore(health);
 
         projectRepository.save(project);

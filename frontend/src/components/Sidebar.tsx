@@ -18,14 +18,14 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { name: 'Overview', path: '', icon: LayoutDashboard },
-    { name: 'Visualization', path: 'visualizations', icon: Binary },
-    { name: 'Code Explorer', path: 'explorer', icon: Code },
-    { name: 'AI Chat', path: 'chat', icon: MessageSquareCode },
-    { name: 'Security Scan', path: 'security', icon: ShieldAlert },
-    { name: 'SBOM DB', path: 'sbom', icon: Layers },
-    { name: 'Reports', path: 'reports', icon: FileCheck },
-    { name: 'Settings', path: 'settings', icon: Settings },
+    { name: 'Overview', path: '', icon: LayoutDashboard, color: 'text-cyan-400', bg: 'hover:bg-cyan-500/5 hover:text-cyan-300', activeClass: 'from-cyan-600 to-blue-600 shadow-cyan-500/20' },
+    { name: 'Visualization', path: 'visualizations', icon: Binary, color: 'text-fuchsia-400', bg: 'hover:bg-fuchsia-500/5 hover:text-fuchsia-300', activeClass: 'from-fuchsia-600 to-pink-600 shadow-fuchsia-500/20' },
+    { name: 'Code Explorer', path: 'explorer', icon: Code, color: 'text-amber-400', bg: 'hover:bg-amber-500/5 hover:text-amber-300', activeClass: 'from-amber-600 to-orange-600 shadow-amber-500/20' },
+    { name: 'AI Chat', path: 'chat', icon: MessageSquareCode, color: 'text-indigo-400', bg: 'hover:bg-indigo-500/5 hover:text-indigo-300', activeClass: 'from-indigo-600 to-purple-600 shadow-indigo-500/20' },
+    { name: 'Security Scan', path: 'security', icon: ShieldAlert, color: 'text-rose-400', bg: 'hover:bg-rose-500/5 hover:text-rose-300', activeClass: 'from-rose-600 to-red-600 shadow-rose-500/20' },
+    { name: 'SBOM DB', path: 'sbom', icon: Layers, color: 'text-emerald-400', bg: 'hover:bg-emerald-500/5 hover:text-emerald-300', activeClass: 'from-emerald-600 to-teal-600 shadow-emerald-500/20' },
+    { name: 'Reports', path: 'reports', icon: FileCheck, color: 'text-sky-400', bg: 'hover:bg-sky-500/5 hover:text-sky-300', activeClass: 'from-sky-600 to-blue-600 shadow-sky-500/20' },
+    { name: 'Settings', path: 'settings', icon: Settings, color: 'text-slate-400', bg: 'hover:bg-slate-500/5 hover:text-slate-300', activeClass: 'from-slate-600 to-slate-800 shadow-slate-500/20' },
   ];
 
   if (!selectedProject) return null;
@@ -63,14 +63,18 @@ export const Sidebar: React.FC = () => {
                 to={targetPath}
                 end={item.path === ''}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                  group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                   ${isActive 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}
+                    ? `bg-gradient-to-r ${item.activeClass} text-white shadow-lg` 
+                    : `text-slate-400 ${item.bg}`}
                 `}
               >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
+                {({ isActive }) => (
+                  <>
+                    <item.icon className={`w-5 h-5 transition-colors group-hover:text-white ${isActive ? 'text-white' : item.color}`} />
+                    <span>{item.name}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}

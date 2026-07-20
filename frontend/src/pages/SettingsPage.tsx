@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { GlassCard } from '../components/GlassCard';
-import { Key, Cpu, HelpCircle, Save, ShieldAlert, Sliders, Lock, ShieldCheck, Mail, Palette } from 'lucide-react';
+import { Key, Cpu, HelpCircle, Save, Sliders, Lock, Mail, Palette } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const SettingsPage: React.FC = () => {
   const { user, token } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN';
 
-  // API Key integration states
-  const [geminiKey, setGeminiKey] = useState(localStorage.getItem('gemini_key') || '');
-  const [openaiKey, setOpenaiKey] = useState(localStorage.getItem('openai_key') || '');
-  const [depth, setDepth] = useState('standard');
-  const [saveStatus, setSaveStatus] = useState('');
+
 
   // User Preferences states
   const [themeAccent, setThemeAccent] = useState(localStorage.getItem('theme_accent') || 'indigo');
@@ -29,13 +25,58 @@ export const SettingsPage: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const handleSaveAPIKeys = (e: React.FormEvent) => {
+  // API Key integration states
+  const [geminiKey, setGeminiKey] = useState('');
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [depth, setDepth] = useState('standard');
+  const [saveStatus, setSaveStatus] = useState('');
+
+  React.useEffect(() => {
+    const fetchApiSettings = async () => {
+      if (!isAdmin) return;
+      try {
+        const res = await fetch('http://localhost:8080/api/admin/settings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setGeminiKey(data.gemini_key || '');
+          setOpenaiKey(data.openai_key || '');
+        }
+      } catch (err) {
+        console.error('Failed to load system settings from backend.');
+      }
+    };
+    fetchApiSettings();
+  }, [isAdmin, token]);
+
+  const handleSaveAPIKeys = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) return;
-    localStorage.setItem('gemini_key', geminiKey);
-    localStorage.setItem('openai_key', openaiKey);
-    setSaveStatus('API settings saved successfully!');
-    setTimeout(() => setSaveStatus(''), 3000);
+    try {
+      const res = await fetch('http://localhost:8080/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gemini_key: geminiKey,
+          openai_key: openaiKey,
+        }),
+      });
+      if (res.ok) {
+        setSaveStatus('API settings saved successfully on the server!');
+        setTimeout(() => setSaveStatus(''), 3000);
+      } else {
+        setSaveStatus('Error: Failed to save settings.');
+      }
+    } catch (err) {
+      setSaveStatus('Network error saving settings.');
+    }
   };
 
   const handleSavePreferences = (e: React.FormEvent) => {
@@ -100,29 +141,19 @@ export const SettingsPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Card 1: API Integrations (Admin Only) */}
-          <GlassCard className="p-8 space-y-6">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Key className="w-5 h-5 text-indigo-400" />
-              <span>API Integrations (Admins)</span>
-            </h2>
-            
-            {saveStatus && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl">
-                {saveStatus}
-              </div>
-            )}
-
-            {!isAdmin ? (
-              <div className="p-6 bg-slate-950/40 rounded-xl border border-white/5 flex flex-col items-center text-center space-y-4">
-                <ShieldAlert className="w-12 h-12 text-amber-500/80 animate-pulse" />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-white">Administrator Access Required</h3>
-                  <p className="text-xs text-slate-400 max-w-sm">
-                    API integration settings (Gemini/OpenAI keys) are restricted to Administrator accounts. Please contact your system administrator to configure platform LLM integrations.
-                  </p>
+          {isAdmin && (
+            <GlassCard className="p-8 space-y-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Key className="w-5 h-5 text-indigo-400" />
+                <span>API Integrations (System-Wide Keys)</span>
+              </h2>
+              
+              {saveStatus && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl">
+                  {saveStatus}
                 </div>
-              </div>
-            ) : (
+              )}
+
               <form onSubmit={handleSaveAPIKeys} className="space-y-6">
                 
                 {/* Gemini Key Input */}
@@ -186,8 +217,8 @@ export const SettingsPage: React.FC = () => {
                 </button>
 
               </form>
-            )}
-          </GlassCard>
+            </GlassCard>
+          )}
 
           {/* Card 2: User Preferences (Everyone) */}
           <GlassCard className="p-8 space-y-6">

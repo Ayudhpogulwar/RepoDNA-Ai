@@ -20,7 +20,7 @@ export const Navbar: React.FC = () => {
           <Dna className="w-6 h-6 animate-pulse" />
         </div>
         <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-          CodeDNA <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text font-medium text-base">AI</span>
+          RepoDNA-<span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text font-medium text-base">Ai</span>
         </span>
       </Link>
 

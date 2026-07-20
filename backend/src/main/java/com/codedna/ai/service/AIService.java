@@ -1,5 +1,7 @@
 package com.codedna.ai.service;
 
+import com.codedna.ai.model.SystemSetting;
+import com.codedna.ai.repository.SystemSettingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -24,18 +26,29 @@ public class AIService {
     private String openaiModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final SystemSettingRepository systemSettingRepository;
+
+    public AIService(SystemSettingRepository systemSettingRepository) {
+        this.systemSettingRepository = systemSettingRepository;
+    }
 
     public String generateResponse(String systemPrompt, String userPrompt) {
         return generateResponse(systemPrompt, userPrompt, null, null);
     }
 
     public String generateResponse(String systemPrompt, String userPrompt, String customGeminiKey, String customOpenaiKey) {
-        String activeGeminiKey = (customGeminiKey != null && !customGeminiKey.trim().isEmpty()) ? customGeminiKey : this.geminiKey;
-        String activeOpenaiKey = (customOpenaiKey != null && !customOpenaiKey.trim().isEmpty()) ? customOpenaiKey : this.openaiKey;
+        String dbGeminiKey = systemSettingRepository.findById("gemini_key").map(SystemSetting::getKeyValue).orElse("");
+        String dbOpenaiKey = systemSettingRepository.findById("openai_key").map(SystemSetting::getKeyValue).orElse("");
+
+        String activeGeminiKey = (customGeminiKey != null && !customGeminiKey.trim().isEmpty()) ? customGeminiKey 
+            : (!dbGeminiKey.trim().isEmpty() ? dbGeminiKey : this.geminiKey);
+
+        String activeOpenaiKey = (customOpenaiKey != null && !customOpenaiKey.trim().isEmpty()) ? customOpenaiKey 
+            : (!dbOpenaiKey.trim().isEmpty() ? dbOpenaiKey : this.openaiKey);
 
         // If Gemini Key is present, call Gemini
         if (activeGeminiKey != null && !activeGeminiKey.trim().isEmpty()) {
-            return callGemini(systemPrompt, userPrompt, activeGeminiKey);
+            return callGemini(systemPrompt, userPrompt, activeGeminiKey, activeOpenaiKey);
         }
         
         // Else if OpenAI Key is present, call OpenAI
@@ -48,9 +61,9 @@ public class AIService {
         return generateMockResponse(systemPrompt, userPrompt);
     }
 
-    private String callGemini(String system, String user, String activeKey) {
+    private String callGemini(String system, String user, String activeGeminiKey, String activeOpenaiKey) {
         try {
-            String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", geminiModel, activeKey);
+            String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", geminiModel, activeGeminiKey);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -88,7 +101,7 @@ public class AIService {
         } catch (Exception e) {
             log.error("Error communicating with Gemini: {}", e.getMessage());
         }
-        return callOpenAI(system, user, activeKey); // Fallback to OpenAI if Gemini fails
+        return callOpenAI(system, user, activeOpenaiKey); // Fallback to OpenAI if Gemini fails
     }
 
     private String callOpenAI(String system, String user, String activeKey) {
@@ -188,7 +201,7 @@ public class AIService {
         }
 
         return """
-        ### CodeDNA AI Agent (Local Simulator)
+        ### RepoDNA-Ai Agent (Local Simulator)
         I have analyzed your query based on the local structural index:
         
         * **Code Structure**: The project implements standard controller/service/repository architectures.

@@ -48,6 +48,23 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  const formatMessageText = (text: string) => {
+    if (!text) return '';
+    // 1. Remove markdown horizontal rules (---)
+    let formatted = text.replace(/^-{3,}\s*$/gm, '');
+    
+    // 2. Remove headers syntax (## or ###) but keep the text
+    formatted = formatted.replace(/^#+\s*(.*)$/gm, '$1');
+
+    // 3. Remove bold indicators (**)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
+
+    // 4. Clean up lists (convert leading "- " or "* " to bullet points "• ")
+    formatted = formatted.replace(/^[-*]\s+/gm, '• ');
+
+    return formatted;
+  };
+
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col justify-between border border-white/5 rounded-2xl overflow-hidden glass-container">
       
@@ -87,7 +104,7 @@ export const ChatPage: React.FC = () => {
                   ${isAi 
                     ? 'bg-slate-900/50 text-slate-300 border border-white/5' 
                     : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'}`}>
-                  {msg.messageText}
+                  {formatMessageText(msg.messageText)}
                 </div>
 
                 {/* Consulted Files indicators */}

@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json();
         localStorage.setItem('codedna_token', data.token);
         setToken(data.token);
-        setUser({ id: 1, username: data.username, email: data.email, role: data.role });
+        setUser({ id: data.id, username: data.username, email: data.email, role: data.role });
         return true;
       }
       return false;
@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json();
         localStorage.setItem('codedna_token', data.token);
         setToken(data.token);
-        setUser({ id: 1, username: data.username, email: data.email, role: data.role });
+        setUser({ id: data.id, username: data.username, email: data.email, role: data.role });
         return true;
       }
       return false;

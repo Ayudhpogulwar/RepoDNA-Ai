@@ -104,4 +104,14 @@ public class VisualizationController {
         diagrams.put("sequenceDiagram", visualizationService.generateMermaidSequenceDiagram(files));
         return ResponseEntity.ok(diagrams);
     }
+
+    @GetMapping("/tech-debt")
+    public ResponseEntity<?> getTechnicalDebtHeatmap(@PathVariable Long projectId, Principal principal) {
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if (project == null) return ResponseEntity.notFound().build();
+        if (!isAuthorized(project, principal)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        List<ProjectFile> files = projectFileRepository.findByProject(project);
+        return ResponseEntity.ok(visualizationService.calculateTechnicalDebtHeatmap(files));
+    }
 }

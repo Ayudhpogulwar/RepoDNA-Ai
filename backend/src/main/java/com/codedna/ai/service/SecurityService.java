@@ -50,7 +50,7 @@ public class SecurityService {
         scanDependencies(dependencies, issues);
 
         // 3. Compute score
-        int score = calculateSecurityScore(issues);
+        int score = calculateSecurityScore(issues, files.size());
         
         String jsonIssues = "[]";
         try {
@@ -185,16 +185,18 @@ public class SecurityService {
         }
     }
 
-    private int calculateSecurityScore(List<SecurityIssue> issues) {
-        int penalty = 0;
-        for (SecurityIssue issue : issues) {
-            switch (issue.severity) {
-                case "HIGH" -> penalty += 20;
-                case "MEDIUM" -> penalty += 10;
-                case "LOW" -> penalty += 3;
-            }
-        }
-        return Math.max(0, 100 - penalty);
+    private int calculateSecurityScore(List<SecurityIssue> issues, int totalFiles) {
+        if (issues.isEmpty()) return 100;
+
+        long highCount = issues.stream().filter(i -> "HIGH".equals(i.severity)).count();
+        long medCount = issues.stream().filter(i -> "MEDIUM".equals(i.severity)).count();
+        long lowCount = issues.stream().filter(i -> "LOW".equals(i.severity)).count();
+
+        double weightedIssues = (highCount * 10.0) + (medCount * 4.0) + (lowCount * 1.5);
+        double fileScale = Math.max(1.0, Math.sqrt(totalFiles));
+        
+        int score = (int) Math.round(100.0 - (weightedIssues / fileScale));
+        return Math.max(15, Math.min(100, score));
     }
 
     private String generateRecommendationsSummary(List<SecurityIssue> issues) {

@@ -134,11 +134,7 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
-    const gemini = localStorage.getItem('gemini_key');
-    const openai = localStorage.getItem('openai_key');
     const devLevel = localStorage.getItem('dev_level') || 'mid';
-    if (gemini) headers['X-Gemini-Key'] = gemini;
-    if (openai) headers['X-OpenAI-Key'] = openai;
     headers['X-Developer-Level'] = devLevel;
     return headers;
   };
@@ -503,32 +499,132 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (res.ok) {
         const data = await res.json();
         
-        // Map raw nodes/edges into React Flow compatible items
-        const flowNodes = data.nodes.map((n: any, idx: number) => ({
-          id: n.id,
-          type: n.type === 'folder' || n.type === 'app' ? 'input' : 'default',
-          data: { label: n.label, filePath: n.data.filePath, status: n.data.status, language: n.data.language, size: n.data.size },
-          position: { x: 100 + (idx % 3) * 220, y: 50 + Math.floor(idx / 3) * 160 },
-          style: {
-            background: n.type === 'folder' ? 'rgba(30, 41, 59, 0.9)' : n.type === 'controller' ? 'rgba(99, 102, 241, 0.8)' : n.type === 'service' ? 'rgba(139, 92, 246, 0.8)' : 'rgba(15, 23, 42, 0.65)',
-            color: '#F8FAFC',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '8px',
-            padding: '10px',
-            fontSize: '12px',
-            width: '180px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        // Step 1: Assign a level/layer to each node based on context type
+        const nodesWithLevels = data.nodes.map((n: any) => {
+          let level = 0;
+          if (visualType === 'tree') {
+            if (n.id === 'root') {
+              level = 0;
+            } else {
+              // Count slashes in path for depth level representation
+              const slashes = (n.id.match(/\//g) || []).length;
+              level = slashes + 1;
+            }
+          } else if (visualType === 'flow') {
+            if (n.type === 'controller') level = 0;
+            else if (n.type === 'service') level = 1;
+            else if (n.type === 'repository') level = 2;
+            else if (n.type === 'model') level = 3;
+          } else if (visualType === 'dependencies') {
+            if (n.id === 'app-root') level = 0;
+            else level = 1;
+          } else if (visualType === 'data') {
+            if (n.id === 'input-user') level = 0;
+            else if (n.id.startsWith('ep-')) level = 1;
+            else if (n.id.startsWith('tbl-')) level = 2;
           }
-        }));
+          return { ...n, level };
+        });
 
-        const flowEdges = data.edges.map((e: any) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          label: e.label,
-          animated: e.animated === 'true',
-          style: { stroke: '#6366F1', strokeWidth: 1.5 }
-        }));
+        // Step 2: Group nodes by level
+        const levelGroups: Record<number, any[]> = {};
+        nodesWithLevels.forEach((n: any) => {
+          if (!levelGroups[n.level]) {
+            levelGroups[n.level] = [];
+          }
+          levelGroups[n.level].push(n);
+        });
+
+        // Step 3: Map into React Flow compatible items with computed layout coordinates
+        const flowNodes = nodesWithLevels.map((n: any) => {
+          const group = levelGroups[n.level];
+          const indexInGroup = group.findIndex(item => item.id === n.id);
+          const totalInGroup = group.length;
+
+          // Compute X coordinate to space nodes out evenly and center them around X=300
+          const spacing = 240;
+          const totalWidth = (totalInGroup - 1) * spacing;
+          const x = 300 + (indexInGroup * spacing) - (totalWidth / 2);
+          
+          // Compute Y coordinate based on layer level
+          const y = 50 + n.level * 180;
+
+          // Determine aesthetic style based on node type and status
+          let background = 'rgba(15, 23, 42, 0.75)';
+          let border = '1px solid rgba(255, 255, 255, 0.08)';
+          let textColor = '#F8FAFC';
+          let shadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+
+          if (n.type === 'folder' || n.type === 'app') {
+            background = 'rgba(17, 24, 39, 0.9)';
+            border = '1px solid rgba(16, 185, 129, 0.4)'; // Emerald highlight for directories
+            textColor = '#34D399'; // Emerald text
+            shadow = '0 0 15px rgba(16, 185, 129, 0.1)';
+          } else if (n.type === 'controller') {
+            background = 'rgba(219, 39, 119, 0.15)'; // Fuchsia for API Gateways/Controllers
+            border = '1px solid rgba(236, 72, 153, 0.6)';
+            textColor = '#F472B6';
+            shadow = '0 0 20px rgba(236, 72, 153, 0.2)';
+          } else if (n.type === 'service') {
+            background = 'rgba(79, 70, 229, 0.15)'; // Indigo for Services/Logic
+            border = '1px solid rgba(99, 102, 241, 0.6)';
+            textColor = '#818CF8';
+            shadow = '0 0 20px rgba(99, 102, 241, 0.2)';
+          } else if (n.type === 'repository') {
+            background = 'rgba(217, 119, 6, 0.15)'; // Amber for DB queries
+            border = '1px solid rgba(245, 158, 11, 0.6)';
+            textColor = '#FBBF24';
+            shadow = '0 0 20px rgba(245, 158, 11, 0.2)';
+          } else if (n.type === 'model') {
+            background = 'rgba(5, 150, 105, 0.15)'; // Emerald for DB Entities
+            border = '1px solid rgba(16, 185, 129, 0.6)';
+            textColor = '#34D399';
+            shadow = '0 0 20px rgba(16, 185, 129, 0.2)';
+          } else if (n.data?.status === 'VULNERABLE') {
+            background = 'rgba(220, 38, 38, 0.25)'; // Rose/Red for vulnerabilities
+            border = '1px solid rgba(244, 63, 94, 0.7)';
+            textColor = '#FB7185';
+            shadow = '0 0 25px rgba(244, 63, 94, 0.35)';
+          }
+
+          return {
+            id: n.id,
+            type: n.type === 'folder' || n.type === 'app' ? 'input' : 'default',
+            data: { label: n.label, filePath: n.data.filePath, status: n.data.status, language: n.data.language, size: n.data.size },
+            position: { x, y },
+            style: {
+              background,
+              color: textColor,
+              border,
+              borderRadius: '12px',
+              padding: '12px 16px',
+              fontSize: '11px',
+              fontWeight: '600',
+              fontFamily: 'Outfit, sans-serif',
+              width: '200px',
+              boxShadow: shadow,
+              backdropFilter: 'blur(8px)'
+            }
+          };
+        });
+
+        // Map edges and style them dynamically with animations
+        const flowEdges = data.edges.map((e: any) => {
+          const isAnimated = e.animated === 'true' || e.source.startsWith('ep-') || e.source.startsWith('ctrl-');
+          const isVulnerable = e.animated === 'true'; // Set earlier for vulnerability pathways
+          return {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            label: e.label,
+            animated: isAnimated,
+            style: {
+              stroke: isVulnerable ? '#F43F5E' : '#6366F1',
+              strokeWidth: isVulnerable ? 2.5 : 1.5,
+              opacity: 0.8
+            }
+          };
+        });
 
         setGraphData({ nodes: flowNodes, edges: flowEdges });
       }

@@ -43,7 +43,7 @@ export const AnalysisProgressPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0F19] p-6 lg:p-8 flex flex-col items-center justify-center relative">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-6 lg:p-8 flex flex-col items-center justify-center relative">
       <div className="glow-primary top-[20%] left-[20%]" />
       <div className="glow-secondary bottom-[20%] right-[20%]" />
 

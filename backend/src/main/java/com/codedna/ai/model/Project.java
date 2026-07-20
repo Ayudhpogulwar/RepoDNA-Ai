@@ -56,6 +56,30 @@ public class Project {
     @Column(name = "learning_roadmap", columnDefinition = "LONGTEXT")
     private String learningRoadmap;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ProjectFile> projectFiles;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Dependency> dependencies;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private SBOMReport sbomReport;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private SecurityReport securityReport;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AnalysisRun> analysisRuns;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ChatMessage> chatMessages;
+
     public Project() {}
 
     public Project(Long id, String name, String description, String gitUrl, String localPath, ProjectType type, Integer healthScore, Integer securityScore, User user, String frameworks, String languages, String summary, String learningRoadmap) {

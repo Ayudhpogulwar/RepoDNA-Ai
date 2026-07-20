@@ -31,6 +31,16 @@ export const Dashboard: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
 
+  const cardColors = [
+    { border: 'hover:border-cyan-500/40', badge: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20', button: 'bg-cyan-600/15 hover:bg-cyan-600 text-cyan-400 hover:text-white border-cyan-500/20' },
+    { border: 'hover:border-fuchsia-500/40', badge: 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20', button: 'bg-fuchsia-600/15 hover:bg-fuchsia-600 text-fuchsia-400 hover:text-white border-fuchsia-500/20' },
+    { border: 'hover:border-amber-500/40', badge: 'text-amber-400 bg-amber-500/10 border-amber-500/20', button: 'bg-amber-600/15 hover:bg-amber-600 text-amber-400 hover:text-white border-amber-500/20' },
+    { border: 'hover:border-indigo-500/40', badge: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20', button: 'bg-indigo-600/15 hover:bg-indigo-600 text-indigo-400 hover:text-white border-indigo-500/20' },
+    { border: 'hover:border-rose-500/40', badge: 'text-rose-400 bg-rose-500/10 border-rose-500/20', button: 'bg-rose-600/15 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-500/20' },
+    { border: 'hover:border-emerald-500/40', badge: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', button: 'bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white border-emerald-500/20' },
+    { border: 'hover:border-sky-500/40', badge: 'text-sky-400 bg-sky-500/10 border-sky-500/20', button: 'bg-sky-600/15 hover:bg-sky-600 text-sky-400 hover:text-white border-sky-500/20' }
+  ];
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -69,7 +79,7 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0F19] p-6 lg:p-8 space-y-8 relative">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-6 lg:p-8 space-y-8 relative">
       <div className="glow-primary top-[10%] left-[5%]" />
       <div className="glow-secondary bottom-[10%] right-[5%]" />
 
@@ -192,47 +202,49 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map((project) => (
-                <div 
-                  key={project.id}
-                  className="glass-card rounded-2xl p-6 border border-white/5 hover:border-indigo-500/40 hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-white text-lg">{project.name}</h3>
-                      <span className="text-[10px] text-indigo-400 font-semibold px-2 py-0.5 bg-indigo-500/10 rounded-full border border-indigo-500/20">
-                        {project.type}
-                      </span>
-                    </div>
-                    <p className="text-slate-400 text-sm max-w-lg truncate">{project.description || 'No description provided.'}</p>
-                    <div className="text-xs text-slate-500">Created: {new Date(project.createdAt).toLocaleDateString()}</div>
-                  </div>
-
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Health</span>
-                        <span className={`text-base font-bold ${project.healthScore >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>
-                          {project.healthScore}%
+            {filteredProjects.length > 0 ?
+              filteredProjects.map((project, idx) => {
+                const c = cardColors[idx % cardColors.length];
+                return (
+                  <div 
+                    key={project.id}
+                    className={`glass-card rounded-2xl p-6 border border-white/5 ${c.border} hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white text-lg">{project.name}</h3>
+                        <span className={`text-[10px] ${c.badge} font-semibold px-2 py-0.5 rounded-full border`}>
+                          {project.type}
                         </span>
                       </div>
-                      <div className="text-center">
-                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Security</span>
-                        <span className={`text-base font-bold ${project.securityScore >= 80 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {project.securityScore}%
-                        </span>
-                      </div>
+                      <p className="text-slate-400 text-sm max-w-lg truncate">{project.description || 'No description provided.'}</p>
+                      <div className="text-xs text-slate-500">Created: {new Date(project.createdAt).toLocaleDateString()}</div>
                     </div>
 
-                    <div className="flex items-center gap-2 pl-4 border-l border-white/5">
-                      <button 
-                        onClick={() => handleSelect(project.id)}
-                        className="p-2 bg-indigo-600/15 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl border border-indigo-500/20 transition-all"
-                        title="Enter Workspace"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Health</span>
+                          <span className={`text-base font-bold ${project.healthScore >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                            {project.healthScore}%
+                          </span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Security</span>
+                          <span className={`text-base font-bold ${project.securityScore >= 80 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {project.securityScore}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pl-4 border-l border-white/5">
+                        <button 
+                          onClick={() => handleSelect(project.id)}
+                          className={`p-2 rounded-xl border transition-all ${c.button}`}
+                          title="Enter Workspace"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
                       <button 
                         onClick={() => deleteProject(project.id)}
                         className="p-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl border border-red-500/20 transition-all"
@@ -243,8 +255,9 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
+              );
+            })
+            : (
               <div className="text-center py-16 bg-slate-900/35 border border-dashed border-white/5 rounded-2xl">
                 <FolderKanban className="w-12 h-12 text-slate-700 mx-auto mb-4" />
                 <h3 className="font-semibold text-white">No active workspaces</h3>

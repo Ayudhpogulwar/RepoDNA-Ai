@@ -6,7 +6,7 @@
 
 body {
   margin: 0;
-  background-color: #0B0F19;
+  background-color: #111827;
   color: #E2E8F0;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
@@ -39,7 +39,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-nav {
-  background: rgba(11, 15, 25, 0.75);
+  background: rgba(17, 24, 39, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -53,7 +53,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(11, 15, 25, 0.5);
+  background: rgba(17, 24, 39, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -91,4 +91,12 @@ h1, h2, h3, h4, h5, h6 {
   background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, rgba(0,0,0,0) 70%);
   filter: blur(35px);
   pointer-events: none;
+}
+
+/* High-tech grid overlay */
+.bg-grid {
+  background-size: 50px 50px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
