@@ -366,10 +366,10 @@ export const RepoDashboard: React.FC = () => {
             <textarea
               value={summaryText}
               onChange={(e) => setSummaryText(e.target.value)}
-              className="w-full h-96 bg-slate-950/60 border border-white/10 rounded-xl p-4 text-slate-300 text-sm focus:outline-none focus:border-indigo-500/50 resize-y font-mono"
+              className="w-full h-[450px] bg-slate-950/60 border border-white/10 rounded-xl p-4 text-slate-300 text-sm focus:outline-none focus:border-indigo-500/50 resize-y font-mono"
             />
           ) : (
-            <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap">
+            <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap h-[450px] overflow-y-auto pr-2 scrollbar-thin">
               {formatMarkdownText(selectedProject.summary || 'Summary is compiling... Check progress.')}
             </div>
           )}
@@ -419,10 +419,10 @@ export const RepoDashboard: React.FC = () => {
             <textarea
               value={roadmapText}
               onChange={(e) => setRoadmapText(e.target.value)}
-              className="w-full h-96 bg-slate-950/60 border border-white/10 rounded-xl p-4 text-indigo-300 text-xs focus:outline-none focus:border-indigo-500/50 resize-y font-mono"
+              className="w-full h-[450px] bg-slate-950/60 border border-white/10 rounded-xl p-4 text-indigo-300 text-xs focus:outline-none focus:border-indigo-500/50 resize-y font-mono"
             />
           ) : (
-            <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap bg-slate-950/45 p-4 rounded-xl border border-white/5 font-mono text-xs">
+            <div className="prose prose-invert text-sm text-slate-300 leading-relaxed max-w-none whitespace-pre-wrap bg-slate-950/45 p-4 rounded-xl border border-white/5 font-mono text-xs h-[450px] overflow-y-auto pr-2 scrollbar-thin">
               {formatMarkdownText(selectedProject.learningRoadmap || 'Roadmap is compiling... Check progress.')}
             </div>
           )}
