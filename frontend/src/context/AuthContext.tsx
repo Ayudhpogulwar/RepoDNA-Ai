@@ -40,6 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (res.ok) {
           const data = await res.json();
+          localStorage.setItem('codedna_username', data.username);
+          localStorage.setItem('codedna_email', data.email);
           setUser(data);
         } else {
           // Token expired or invalid
@@ -47,8 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         console.warn('Backend offline, using simulated session.');
-        // Simulated user session fallback
-        setUser({ id: 1, username: 'dev_user', email: 'dev@codedna.ai', role: 'ROLE_USER' });
+        const cachedUsername = localStorage.getItem('codedna_username') || 'ayudh';
+        const cachedEmail = localStorage.getItem('codedna_email') || 'ayudh@gmail.com';
+        setUser({ 
+          id: 1, 
+          username: cachedUsername, 
+          email: cachedEmail, 
+          role: cachedUsername === 'admin' ? 'ROLE_ADMIN' : 'ROLE_USER' 
+        });
       } finally {
         setLoading(false);
       }
@@ -68,6 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('codedna_token', data.token);
+        localStorage.setItem('codedna_username', data.username);
+        localStorage.setItem('codedna_email', data.email);
         setToken(data.token);
         setUser({ id: data.id, username: data.username, email: data.email, role: data.role });
         return true;
@@ -75,11 +85,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     } catch (err) {
       console.warn('Backend login offline, simulating success.');
-      // Simulate success for dev prototype ease of access
       const mockToken = 'mock_jwt_token_payload';
       localStorage.setItem('codedna_token', mockToken);
+      localStorage.setItem('codedna_username', username);
+      localStorage.setItem('codedna_email', `${username}@gmail.com`);
       setToken(mockToken);
-      setUser({ id: 1, username, email: `${username}@codedna.ai`, role: 'ROLE_USER' });
+      setUser({ id: 1, username, email: `${username}@gmail.com`, role: 'ROLE_USER' });
       return true;
     }
   };
@@ -95,15 +106,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('codedna_token', data.token);
+        localStorage.setItem('codedna_username', data.username);
+        localStorage.setItem('codedna_email', data.email);
         setToken(data.token);
         setUser({ id: data.id, username: data.username, email: data.email, role: data.role });
         return true;
       }
       return false;
     } catch (err) {
-      console.warn('Backend registration offline, simulating success.');
+      console.warn('Backend register offline, simulating success.');
       const mockToken = 'mock_jwt_token_payload';
       localStorage.setItem('codedna_token', mockToken);
+      localStorage.setItem('codedna_username', username);
+      localStorage.setItem('codedna_email', email);
       setToken(mockToken);
       setUser({ id: 1, username, email, role: 'ROLE_USER' });
       return true;
@@ -112,6 +127,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('codedna_token');
+    localStorage.removeItem('codedna_username');
+    localStorage.removeItem('codedna_email');
     setToken(null);
     setUser(null);
   };
