@@ -150,9 +150,9 @@ export const PipelinePage: React.FC = () => {
   }, [pipelineStatus, currentStageIdx]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">CI/CD Build Pipeline</h1>
           <p className="text-sm text-slate-400">Automate codebase integration, dependency security, and cloud deployment flows</p>
@@ -161,7 +161,7 @@ export const PipelinePage: React.FC = () => {
         <button
           onClick={runPipeline}
           disabled={pipelineStatus === 'running'}
-          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-sm font-semibold transition-all border border-indigo-400/20 shadow-lg shadow-indigo-600/15 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-sm font-semibold transition-all border border-indigo-400/20 shadow-lg shadow-indigo-600/15 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           {pipelineStatus === 'running' ? (
             <>
