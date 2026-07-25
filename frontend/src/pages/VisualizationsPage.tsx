@@ -59,71 +59,97 @@ export const VisualizationsPage: React.FC = () => {
     if (!filePath) return;
     setIsSimulating(true);
     setTimeout(() => {
-      const isController = filePath.includes('Controller');
-      const isService = filePath.includes('Service');
-      const isConfig = filePath.endsWith('.properties') || filePath.endsWith('.json') || filePath.endsWith('.yml');
+      // Find the file details from the project context
+      const targetFile = files?.find(f => f.filePath === filePath);
+      const fileSize = targetFile?.size || 500;
+      const complexity = targetFile?.complexity || 1;
+      const fileBaseName = filePath.split('/').pop() || filePath;
 
-      let blastRadius = 2;
-      let coupling = 3.2;
-      let riskScore = 45;
-      let riskLevel = 'MEDIUM';
+      const isController = filePath.toLowerCase().includes('controller') || filePath.toLowerCase().includes('router') || filePath.toLowerCase().includes('page');
+      const isService = filePath.toLowerCase().includes('service') || filePath.toLowerCase().includes('handler') || filePath.toLowerCase().includes('util');
+      const isConfig = filePath.toLowerCase().includes('config') || filePath.toLowerCase().includes('properties') || filePath.toLowerCase().includes('xml') || filePath.toLowerCase().includes('json') || filePath.toLowerCase().includes('yml');
+
+      // 1. Calculate dynamic Blast Radius based on file size and class type
+      let blastRadius = Math.min(10, Math.max(1, Math.round(fileSize / 1200) + (isController ? 2 : isService ? 3 : isConfig ? 5 : 0)));
+      
+      // 2. Calculate dynamic Coupling Factor deterministically
+      let coupling = Number((1.5 + (complexity * 0.8) + (filePath.length % 4) * 0.6).toFixed(1));
+      
+      // 3. Calculate dynamic Risk Score directly linked to file complexity
+      let riskScore = Math.min(98, Math.max(12, (complexity * 9) + (fileSize % 15)));
+      
+      let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
+      if (riskScore >= 80) riskLevel = 'CRITICAL';
+      else if (riskScore >= 60) riskLevel = 'HIGH';
+      else if (riskScore >= 35) riskLevel = 'MEDIUM';
+
+      // 4. Calculate dynamic propagation velocity description
       let propagation = 'Low (Local scope call)';
-      let chain: string[] = [];
-      let affectedList: any[] = [];
-      let recommendation = '';
+      if (isConfig) propagation = 'Severe (System-wide configuration change)';
+      else if (isController) propagation = 'Medium (Alters REST API Contract)';
+      else if (isService) propagation = 'High (Core Business Logic Layer)';
+      else if (riskScore > 50) propagation = 'Medium (Shared Utility propagation)';
 
+      // 5. Generate dynamic propagation chain using directory components + other files
+      const directoryParts = filePath.split('/').filter(p => p && p !== 'src' && p !== 'main' && p !== 'java' && !p.includes('.'));
+      
+      const chain: string[] = [fileBaseName];
+      if (directoryParts.length > 0) {
+        chain.push(`${directoryParts[directoryParts.length - 1]} module`);
+      }
+      
+      // Grab other files dynamically as dependent links
+      const otherFiles = (files || []).filter(f => f.filePath !== filePath);
+      if (otherFiles.length > 0) {
+        const firstLink = otherFiles[filePath.length % otherFiles.length];
+        chain.push(firstLink.fileName);
+        if (otherFiles.length > 1 && blastRadius > 3) {
+          const secondLink = otherFiles[(filePath.length + 5) % otherFiles.length];
+          chain.push(secondLink.fileName);
+        }
+      }
+      
+      // 6. Generate dynamic affected dependents list from real files
+      const affectedList: any[] = [];
+      const affectedCount = Math.min(blastRadius, otherFiles.length);
+      for (let i = 0; i < affectedCount; i++) {
+        const rFile = otherFiles[(filePath.length + i * 3) % otherFiles.length];
+        
+        let relType = 'Import Dependency';
+        if (isConfig) relType = 'System Config Consumer';
+        else if (i === 0 && isController) relType = 'REST Route Caller';
+        else if (i === 1 && isService) relType = 'Database Data Access';
+        
+        const prob = Math.min(100, Math.max(30, 95 - (i * 15) - (filePath.length % 10))) + '%';
+        
+        let itemRisk = 'Low';
+        if (riskScore > 75 && i === 0) itemRisk = 'Critical';
+        else if (riskScore > 50 && i <= 1) itemRisk = 'High';
+        else if (riskScore > 30 && i <= 2) itemRisk = 'Medium';
+
+        affectedList.push({
+          name: rFile.fileName,
+          type: relType,
+          probability: prob,
+          risk: itemRisk
+        });
+      }
+
+      // If no affected files found, add a fallback generic dependent
+      if (affectedList.length === 0) {
+        affectedList.push({ name: 'App.tsx', type: 'Root Component Consumer', probability: '45%', risk: 'Low' });
+      }
+
+      // 7. Dynamic Recommendations
+      let recommendation = '';
       if (isConfig) {
-        blastRadius = 8;
-        coupling = 7.5;
-        riskScore = 88;
-        riskLevel = 'CRITICAL';
-        propagation = 'Severe (System-wide configuration change)';
-        chain = [filePath.split('/').pop() || filePath, 'ClinicService.java', 'DatabaseConnectionPool', 'All Controllers'];
-        affectedList = [
-          { name: 'ClinicService.java', type: 'Direct Config Consumer', probability: '100%', risk: 'Critical' },
-          { name: 'OwnerController.java', type: 'Indirect Endpoint Handler', probability: '90%', risk: 'High' },
-          { name: 'PetController.java', type: 'Indirect Endpoint Handler', probability: '90%', risk: 'High' },
-          { name: 'VetController.java', type: 'Indirect Endpoint Handler', probability: '85%', risk: 'Medium' }
-        ];
-        recommendation = 'Configuration files alter backend connection policies. Changing properties requires running a full server-side validation check to verify connection stability.';
+        recommendation = `Modifying ${fileBaseName} alters environmental properties. Validate database and configuration flags before building.`;
       } else if (isController) {
-        blastRadius = 3;
-        coupling = 4.8;
-        riskScore = 72;
-        riskLevel = 'HIGH';
-        propagation = 'Medium (Alters REST API Contracts)';
-        chain = [filePath.split('/').pop() || filePath, 'WebMvcConfigurer', 'Frontend Routes API client'];
-        affectedList = [
-          { name: 'frontend/src/pages/VisualizationsPage.tsx', type: 'API Route Call', probability: '95%', risk: 'High' },
-          { name: 'ClinicService.java', type: 'Underlying Service provider', probability: '60%', risk: 'Medium' },
-          { name: 'WebMvcSecurityConfig.java', type: 'API Access Interceptor', probability: '45%', risk: 'Low' }
-        ];
-        recommendation = 'Altering Controller entry endpoints affects frontend routing client handlers. Verify API contract consistency by running end-to-end integration tests.';
+        recommendation = `API Contract modifications in ${fileBaseName} affects routing client handlers. Verify payload bindings using integration tests.`;
       } else if (isService) {
-        blastRadius = 5;
-        coupling = 6.2;
-        riskScore = 80;
-        riskLevel = 'HIGH';
-        propagation = 'High (Core Business Logic Layer)';
-        chain = [filePath.split('/').pop() || filePath, 'Repository Layer', 'Database schema relations', 'Associated Controllers'];
-        affectedList = [
-          { name: 'OwnerController.java', type: 'Service Consumer', probability: '98%', risk: 'High' },
-          { name: 'PetController.java', type: 'Service Consumer', probability: '98%', risk: 'High' },
-          { name: 'OwnerRepository.java', type: 'Direct DB Data Access', probability: '80%', risk: 'Medium' },
-          { name: 'PetclinicApplicationTests.java', type: 'Logic Unit Test Class', probability: '75%', risk: 'Medium' }
-        ];
-        recommendation = 'Service modifications affect transactional database boundaries. Ensure validation constraints are preserved and run unit test coverage suites.';
+        recommendation = `Business logic modifications in ${fileBaseName} affect data transaction parameters. Ensure validation states are preserved.`;
       } else {
-        blastRadius = 1;
-        coupling = 2.1;
-        riskScore = 30;
-        riskLevel = 'LOW';
-        propagation = 'Low (Isolated module helper class)';
-        chain = [filePath.split('/').pop() || filePath, 'Direct calling function'];
-        affectedList = [
-          { name: 'MainApplication.java', type: 'Consumer Class', probability: '35%', risk: 'Low' }
-        ];
-        recommendation = 'Changes in this file appear localized. Perform manual unit tests to ensure sanity.';
+        recommendation = `Changes in ${fileBaseName} are localized. Run unit tests for this module to verify consistency.`;
       }
 
       setImpactReport({
