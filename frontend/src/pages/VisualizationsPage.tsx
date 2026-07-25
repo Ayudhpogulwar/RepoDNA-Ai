@@ -104,9 +104,7 @@ export const VisualizationsPage: React.FC = () => {
 
   const handleNodeClick = (_event: React.MouseEvent, node: any) => {
     if (node.data?.filePath) {
-      if (window.confirm(`Would you like to open ${node.data.label} inside the Code Explorer?`)) {
-        navigate(`/project/${id}/explorer?file=${encodeURIComponent(node.data.filePath)}`);
-      }
+      navigate(`/project/${id}/explorer?file=${encodeURIComponent(node.data.filePath)}`);
     }
   };
 
@@ -199,9 +197,7 @@ export const VisualizationsPage: React.FC = () => {
                   <div 
                     key={item.filePath}
                     onClick={() => {
-                      if (window.confirm(`Open ${item.fileName} in Code Explorer?`)) {
-                        navigate(`/project/${id}/explorer?file=${encodeURIComponent(item.filePath)}`);
-                      }
+                      navigate(`/project/${id}/explorer?file=${encodeURIComponent(item.filePath)}`);
                     }}
                     className={`p-5 rounded-2xl border ${borderClass} ${glowShadow} backdrop-blur-md transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-4`}
                   >
