@@ -22,6 +22,7 @@ import { SbomPage } from './pages/SbomPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
+import { PipelinePage } from './pages/PipelinePage';
 
 // Protected Route Guard
 const ProtectedRoute = () => {
@@ -101,6 +102,7 @@ const MainLayout = () => {
             <Route path="sbom" element={<SbomPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="pipeline" element={<PipelinePage />} />
           </Route>
         </Route>
 
