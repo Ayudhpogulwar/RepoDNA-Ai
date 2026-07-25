@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAnalysis } from '../context/AnalysisContext';
 import type { ProjectFile } from '../context/AnalysisContext';
 import { File, Search, Sparkles, Cpu } from 'lucide-react';
@@ -7,6 +7,8 @@ import Editor from '@monaco-editor/react';
 
 export const CodeExplorerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const fileQuery = searchParams.get('file');
   const { files } = useAnalysis();
 
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
@@ -42,9 +44,16 @@ export const CodeExplorerPage: React.FC = () => {
 
   useEffect(() => {
     if (files.length > 0) {
+      if (fileQuery) {
+        const found = files.find(f => f.filePath === fileQuery);
+        if (found) {
+          handleFileClick(found.filePath);
+          return;
+        }
+      }
       handleFileClick(files[0].filePath);
     }
-  }, [files]);
+  }, [files, fileQuery]);
 
   const handleFileClick = async (filePath: string) => {
     try {
