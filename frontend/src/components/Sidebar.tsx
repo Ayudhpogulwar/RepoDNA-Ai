@@ -10,7 +10,8 @@ import {
   Layers, 
   FileCheck, 
   Settings, 
-  ArrowLeft 
+  ArrowLeft,
+  GitPullRequest
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -25,6 +26,7 @@ export const Sidebar: React.FC = () => {
     { name: 'Security Scan', path: 'security', icon: ShieldAlert, color: 'text-rose-400', bg: 'hover:bg-rose-500/5 hover:text-rose-300', activeClass: 'from-rose-600 to-red-600 shadow-rose-500/20' },
     { name: 'SBOM DB', path: 'sbom', icon: Layers, color: 'text-emerald-400', bg: 'hover:bg-emerald-500/5 hover:text-emerald-300', activeClass: 'from-emerald-600 to-teal-600 shadow-emerald-500/20' },
     { name: 'Reports', path: 'reports', icon: FileCheck, color: 'text-sky-400', bg: 'hover:bg-sky-500/5 hover:text-sky-300', activeClass: 'from-sky-600 to-blue-600 shadow-sky-500/20' },
+    { name: 'Change Impact', path: 'impact', icon: GitPullRequest, color: 'text-violet-400', bg: 'hover:bg-violet-500/5 hover:text-violet-300', activeClass: 'from-violet-600 to-purple-600 shadow-violet-500/20' },
     { name: 'Settings', path: 'settings', icon: Settings, color: 'text-slate-400', bg: 'hover:bg-slate-500/5 hover:text-slate-300', activeClass: 'from-slate-600 to-slate-800 shadow-slate-500/20' },
   ];
 
