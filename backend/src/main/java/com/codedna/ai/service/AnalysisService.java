@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import com.codedna.ai.model.Dependency;
 import com.codedna.ai.model.Project;
 import com.codedna.ai.model.ProjectFile;
@@ -25,6 +28,9 @@ import com.codedna.ai.repository.AnalysisRunRepository;
 @Service
 public class AnalysisService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalysisService.class);
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final GitService gitService;
     private final FileAnalyzerService fileAnalyzerService;
@@ -132,16 +138,17 @@ public class AnalysisService {
             projectAnalysisProgress.put(id, "Reading Uploaded Files... (30%)");
             files = projectFileRepository.findByProject(project);
 
-            // Clean up old reports and dependencies (but preserve the files!)
-            sbomReportRepository.findByProject(project).ifPresent(sbomReportRepository::delete);
-            securityReportRepository.findByProject(project).ifPresent(securityReportRepository::delete);
-            List<Dependency> dependencies = dependencyRepository.findByProject(project);
-            if (!dependencies.isEmpty()) {
-                dependencyRepository.deleteAll(dependencies);
-            }
-            sbomReportRepository.flush();
-            securityReportRepository.flush();
-            dependencyRepository.flush();
+            // Clean up old reports and dependencies using native queries to bypass Hibernate constraint bugs
+            entityManager.createNativeQuery("DELETE FROM sbom_reports WHERE project_id = ?")
+                    .setParameter(1, project.getId())
+                    .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM security_reports WHERE project_id = ?")
+                    .setParameter(1, project.getId())
+                    .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM dependencies WHERE project_id = ?")
+                    .setParameter(1, project.getId())
+                    .executeUpdate();
+            entityManager.flush();
         }
 
         // 2. Parse dependencies
@@ -256,28 +263,22 @@ public class AnalysisService {
     private void deleteExistingProjectData(Project project) {
         log.info("Cleaning up previous analysis data for project ID: {}", project.getId());
         
-        // 1. Delete SBOM Reports
-        sbomReportRepository.findByProject(project).ifPresent(sbomReportRepository::delete);
-        
-        // 2. Delete Security Reports
-        securityReportRepository.findByProject(project).ifPresent(securityReportRepository::delete);
-        
-        // 3. Delete Dependencies
-        List<Dependency> dependencies = dependencyRepository.findByProject(project);
-        if (!dependencies.isEmpty()) {
-            dependencyRepository.deleteAll(dependencies);
-        }
-        
-        // 4. Delete Project Files
-        List<ProjectFile> files = projectFileRepository.findByProject(project);
-        if (!files.isEmpty()) {
-            projectFileRepository.deleteAll(files);
-        }
-        
-        // Flush all deletions to DB
-        sbomReportRepository.flush();
-        securityReportRepository.flush();
-        dependencyRepository.flush();
-        projectFileRepository.flush();
+        entityManager.createNativeQuery("DELETE FROM sbom_reports WHERE project_id = ?")
+                .setParameter(1, project.getId())
+                .executeUpdate();
+                
+        entityManager.createNativeQuery("DELETE FROM security_reports WHERE project_id = ?")
+                .setParameter(1, project.getId())
+                .executeUpdate();
+                
+        entityManager.createNativeQuery("DELETE FROM dependencies WHERE project_id = ?")
+                .setParameter(1, project.getId())
+                .executeUpdate();
+                
+        entityManager.createNativeQuery("DELETE FROM project_files WHERE project_id = ?")
+                .setParameter(1, project.getId())
+                .executeUpdate();
+                
+        entityManager.flush();
     }
 }
