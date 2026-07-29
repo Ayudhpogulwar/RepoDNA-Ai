@@ -145,6 +145,98 @@ public class AIService {
     private String generateMockResponse(String system, String user) {
         String query = user.toLowerCase();
         
+        // Extract project name dynamically from the context prompt
+        String projectName = "the codebase";
+        if (user.contains("project named '")) {
+            int start = user.indexOf("project named '") + 15;
+            int end = user.indexOf("'", start);
+            if (start > 14 && end > start) {
+                projectName = user.substring(start, end);
+            }
+        }
+
+        // Parse file paths dynamically from the context prompt
+        List<String> files = new ArrayList<>();
+        if (user.contains("Codebase Structure (File Paths):")) {
+            int start = user.indexOf("Codebase Structure (File Paths):");
+            int end = user.indexOf("\n\n", start);
+            if (end == -1) end = user.length();
+            String filesBlock = user.substring(start, end);
+            String[] lines = filesBlock.split("\n");
+            for (String line : lines) {
+                if (line.trim().startsWith("- ")) {
+                    files.add(line.trim().substring(2));
+                }
+            }
+        }
+
+        // Detect languages present in the files
+        Set<String> languages = new LinkedHashSet<>();
+        for (String file : files) {
+            int idx = file.lastIndexOf('.');
+            if (idx != -1) {
+                String ext = file.substring(idx + 1).toLowerCase();
+                if (ext.equals("java")) languages.add("Java");
+                else if (ext.equals("py")) languages.add("Python");
+                else if (ext.equals("js") || ext.equals("jsx")) languages.add("JavaScript");
+                else if (ext.equals("ts") || ext.equals("tsx")) languages.add("TypeScript");
+                else if (ext.equals("xml")) languages.add("XML");
+                else if (ext.equals("yml") || ext.equals("yaml")) languages.add("YAML");
+                else if (ext.equals("json")) languages.add("JSON");
+                else if (ext.equals("html")) languages.add("HTML");
+                else if (ext.equals("css")) languages.add("CSS");
+            }
+        }
+
+        // Handle Project Summary prompt fallback
+        if (user.contains("write a detailed, professional project summary")) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("### Project Summary: ").append(projectName).append("\n\n");
+            sb.append("This project, **").append(projectName).append("**, is a modular codebase built using the following technologies:\n");
+            if (!languages.isEmpty()) {
+                sb.append("- **Languages**: ").append(String.join(", ", languages)).append("\n");
+            }
+            sb.append("\n#### Codebase Architecture & Structure\n");
+            sb.append("The repository contains standard files structured to implement core business flows. Key components include:\n");
+            int pathCount = 0;
+            for (String file : files) {
+                if (pathCount++ < 10) {
+                    sb.append("- `").append(file).append("`\n");
+                }
+            }
+            if (files.size() > 10) {
+                sb.append("- *And ").append(files.size() - 10).append(" other files...*\n");
+            }
+            sb.append("\n#### System Observations\n");
+            sb.append("1. **Modularity**: Code files follow a clean separation of concerns.\n");
+            sb.append("2. **Configurations**: Standard setup files are present in the codebase root to manage environment parameters and dependency lifecycles.\n");
+            return sb.toString();
+        }
+
+        // Handle Onboarding Learning Roadmap prompt fallback
+        if (user.contains("onboarding roadmap for a new developer")) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("### Developer Onboarding Roadmap: ").append(projectName).append("\n\n");
+            sb.append("Welcome to the **").append(projectName).append("** codebase! Follow this structured guide to onboard and understand the project structure:\n\n");
+            
+            sb.append("#### 📂 Step 1: Explore Directory Layout (Day 1)\n");
+            sb.append("Get familiar with the file architecture. Review these core entry files first:\n");
+            int pathCount = 0;
+            for (String file : files) {
+                if (pathCount++ < 5) {
+                    sb.append("- `").append(file).append("`\n");
+                }
+            }
+            
+            sb.append("\n#### ⚙️ Step 2: Understand Dependencies & Setup (Day 2)\n");
+            sb.append("Review configuration manifests to configure local databases, ports, and verify required build environments.\n");
+            
+            sb.append("\n#### 🚀 Step 3: Implement & Test Workflows (Days 3-5)\n");
+            sb.append("Trace execution pathways from controllers/entry points. Write unit tests for custom functions to confirm stability.\n");
+            return sb.toString();
+        }
+
+        // Regular chat/explain queries
         if (query.contains("explain") || query.contains("what does") || query.contains("understand")) {
             return """
             ### Code Explanation (Local Analyzer)
@@ -171,24 +263,6 @@ public class AIService {
             """;
         }
 
-        if (query.contains("roadmap") || query.contains("learn") || query.contains("interview")) {
-            return """
-            ### Learning Roadmap & Onboarding Guide (Local Analyzer)
-            To onboard efficiently onto this project workspace, follow this 3-Step track:
-            
-            #### Step 1: Framework & Setup (Day 1)
-            - Inspect dependency configuration (`pom.xml`, `package.json`, or `requirements.txt`).
-            - Read configuration files to configure databases and active environment ports.
-            
-            #### Step 2: System Architecture (Days 2-3)
-            - Navigate through the Entry Point classes.
-            - Explore endpoints declared in Controller paths. Trace how requests interact with service engines and model entities.
-            
-            #### Step 3: Database & Models (Days 4-5)
-            - Audit entities inside models directories. Note table constraints and field indexes.
-            """;
-        }
-
         if (query.contains("auth") || query.contains("login") || query.contains("jwt")) {
             return """
             ### Authentication Flow Summary (Local Analyzer)
@@ -208,7 +282,7 @@ public class AIService {
         * **APIs**: Exposes standard endpoints mapped dynamically under the project controller paths.
         * **Next Steps**: You can run custom security scans, inspect dependency trees in the SBOM panel, or view automated flow graphs in the Visualizations tab.
         
-        *Note: To enable full generative AI answers, configure a `GEMINI_API_KEY` or `OPENAI_API_KEY` in your backend properties.*
+        *Note: To enable full generative AI answers, configure a `GEMINI_API_KEY` or `OPENAI_API_KEY` in your settings.*
         """;
     }
 }
