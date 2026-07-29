@@ -22,7 +22,8 @@ export const AdminPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:8080/api/auth/users', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/auth/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -52,7 +53,8 @@ export const AdminPage: React.FC = () => {
     setError('');
     setActionSuccess('');
     try {
-      const res = await fetch(`http://localhost:8080/api/auth/users/${userId}/role?role=${newRole}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/auth/users/${userId}/role?role=${newRole}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

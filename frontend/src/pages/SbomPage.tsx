@@ -45,7 +45,8 @@ export const SbomPage: React.FC = () => {
 
   const handleExport = async (format: 'cyclonedx' | 'spdx') => {
     try {
-      const res = await fetch(`http://localhost:8080/api/projects/${id}/sbom/report`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/projects/${id}/sbom/report`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('codedna_token')}`,
         }

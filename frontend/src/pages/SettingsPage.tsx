@@ -35,7 +35,8 @@ export const SettingsPage: React.FC = () => {
     const fetchApiSettings = async () => {
       if (!isAdmin) return;
       try {
-        const res = await fetch('http://localhost:8080/api/admin/settings', {
+        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+        const res = await fetch(`${API_BASE}/admin/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -57,7 +58,8 @@ export const SettingsPage: React.FC = () => {
     e.preventDefault();
     if (!isAdmin) return;
     try {
-      const res = await fetch('http://localhost:8080/api/admin/settings', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/admin/settings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -102,7 +104,8 @@ export const SettingsPage: React.FC = () => {
 
     setSavingPassword(true);
     try {
-      const res = await fetch('http://localhost:8080/api/auth/change-password', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

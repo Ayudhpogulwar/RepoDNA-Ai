@@ -57,7 +57,8 @@ export const CodeExplorerPage: React.FC = () => {
 
   const handleFileClick = async (filePath: string) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/projects/${id}/files/detail?path=${encodeURIComponent(filePath)}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/projects/${id}/files/detail?path=${encodeURIComponent(filePath)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('codedna_token')}`,
         }

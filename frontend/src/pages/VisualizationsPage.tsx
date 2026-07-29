@@ -170,7 +170,8 @@ export const VisualizationsPage: React.FC = () => {
     if (activeTab === 'tree' || activeTab === 'dependencies' || activeTab === 'flow' || activeTab === 'data') {
       fetchVisualizations(Number(id), activeTab);
     } else if (activeTab === 'techdebt') {
-      fetch(`http://localhost:8080/api/projects/${id}/visualizations/tech-debt`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      fetch(`${API_BASE}/projects/${id}/visualizations/tech-debt`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('codedna_token')}` }
       })
       .then(res => res.json())
