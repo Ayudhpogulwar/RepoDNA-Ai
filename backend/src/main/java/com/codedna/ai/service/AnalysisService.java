@@ -107,8 +107,10 @@ public class AnalysisService {
     public Project analyzeLocalDirectory(Project project, File directory, String geminiKey, String openaiKey, String devLevel) {
         Long id = project.getId();
         try {
-            project.setLocalPath(directory.getAbsolutePath());
-            projectRepository.save(project);
+            if (project.getLocalPath() != null && !project.getLocalPath().isEmpty() && !project.getLocalPath().equals(".")) {
+                project.setLocalPath(directory.getAbsolutePath());
+                projectRepository.save(project);
+            }
 
             Project result = analyzeLocalPath(project, directory, geminiKey, openaiKey, devLevel);
             projectAnalysisProgress.put(id, "Ready");
@@ -124,19 +126,38 @@ public class AnalysisService {
         Long id = project.getId();
         List<ProjectFile> files;
 
-        if (project.getType() == Project.ProjectType.REPOSITORY) {
+        boolean scanLocalPath = false;
+        File scanDir = null;
+        if (project.getLocalPath() != null && !project.getLocalPath().trim().isEmpty() && !project.getLocalPath().equals(".")) {
+            File localFile = new File(project.getLocalPath());
+            if (localFile.exists()) {
+                scanLocalPath = true;
+                scanDir = localFile;
+            }
+        }
+
+        if (project.getType() == Project.ProjectType.REPOSITORY || scanLocalPath) {
             // Clean up previous run's data to prevent database constraint violations
             deleteExistingProjectData(project);
 
-            // 1. Scan and read file structure from cloned repository
+            // 1. Scan and read file structure from cloned repository or local disk path
             projectAnalysisProgress.put(id, "Reading Files and Detecting Languages... (30%)");
-            files = fileAnalyzerService.analyzeProjectFiles(project, dir);
+            files = fileAnalyzerService.analyzeProjectFiles(project, scanDir != null ? scanDir : dir);
             projectFileRepository.saveAll(files);
         } else {
             // For FOLDER and FILE projects, files are uploaded directly via REST API.
             // Load them from the database instead of scanning the backend root dir.
             projectAnalysisProgress.put(id, "Reading Uploaded Files... (30%)");
             files = projectFileRepository.findByProject(project);
+
+            // Recalculate/update complexity, language, etc., for uploaded files
+            for (ProjectFile f : files) {
+                if (f.getContent() != null && (f.getComplexity() == null || f.getComplexity() <= 1)) {
+                    int complexity = fileAnalyzerService.estimateComplexity(f.getContent(), f.getLanguage());
+                    f.setComplexity(complexity);
+                }
+            }
+            projectFileRepository.saveAll(files);
 
             // Clean up old reports and dependencies using native queries to bypass Hibernate constraint bugs
             entityManager.createNativeQuery("DELETE FROM sbom_reports WHERE project_id = ?")

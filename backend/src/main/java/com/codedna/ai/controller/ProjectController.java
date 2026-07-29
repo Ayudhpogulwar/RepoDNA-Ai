@@ -46,6 +46,7 @@ public class ProjectController {
         private String description;
         private String type; // REPOSITORY, FOLDER, FILE
         private String gitUrl;
+        private String localPath;
 
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
@@ -55,6 +56,8 @@ public class ProjectController {
         public void setType(String type) { this.type = type; }
         public String getGitUrl() { return gitUrl; }
         public void setGitUrl(String gitUrl) { this.gitUrl = gitUrl; }
+        public String getLocalPath() { return localPath; }
+        public void setLocalPath(String localPath) { this.localPath = localPath; }
     }
 
     @GetMapping
@@ -145,6 +148,7 @@ public class ProjectController {
                 .description(request.getDescription())
                 .type(type)
                 .gitUrl(request.getGitUrl())
+                .localPath(request.getLocalPath())
                 .user(user)
                 .healthScore(100)
                 .securityScore(100)

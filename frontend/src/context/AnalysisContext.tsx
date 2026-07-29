@@ -101,7 +101,7 @@ interface AnalysisContextType {
   projectHistory: AnalysisRun[];
   fetchProjects: () => Promise<void>;
   selectProject: (projectId: number) => Promise<void>;
-  createProject: (name: string, type: string, gitUrl: string, description: string) => Promise<Project | null>;
+  createProject: (name: string, type: string, gitUrl: string, description: string, localPath?: string) => Promise<Project | null>;
   uploadCode: (projectId: number, fileName: string, content: string, language: string) => Promise<boolean>;
   triggerAnalysis: (projectId: number) => Promise<void>;
   askQuestion: (projectId: number, text: string) => Promise<string>;
@@ -305,12 +305,12 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const createProject = async (name: string, type: string, gitUrl: string, description: string): Promise<Project | null> => {
+  const createProject = async (name: string, type: string, gitUrl: string, description: string, localPath?: string): Promise<Project | null> => {
     try {
       const res = await fetch(`${API_BASE}/projects`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ name, type, gitUrl, description }),
+        body: JSON.stringify({ name, type, gitUrl, description, localPath }),
       });
 
       if (res.ok) {
@@ -326,7 +326,7 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         name,
         description,
         gitUrl: gitUrl || null,
-        localPath: gitUrl ? `C:/codedna-ai/uploads/repo-${Date.now()}` : 'C:/codedna-ai/uploads/folder-upload',
+        localPath: localPath || (gitUrl ? `C:/codedna-ai/uploads/repo-${Date.now()}` : 'C:/codedna-ai/uploads/folder-upload'),
         type: type as any,
         healthScore: 100,
         securityScore: 100,

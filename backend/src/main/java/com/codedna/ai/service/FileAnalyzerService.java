@@ -133,7 +133,7 @@ public class FileAnalyzerService {
         return fileName.substring(index + 1);
     }
 
-    private int estimateComplexity(String content, String language) {
+    public int estimateComplexity(String content, String language) {
         if (content == null || content.isEmpty()) return 1;
         // Basic cyclomatic complexity estimate by counting logic statements
         int complexity = 1;

@@ -35,6 +35,9 @@ export const UploadPage: React.FC = () => {
 }`);
   const [loading, setLoading] = useState(false);
   const [folderFiles, setFolderFiles] = useState<File[]>([]);
+  const [localPath, setLocalPath] = useState('');
+  const [folderSource, setFolderSource] = useState<'upload' | 'localPath'>('upload');
+  const [fileSource, setFileSource] = useState<'paste' | 'localPath'>('paste');
 
   const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -55,6 +58,7 @@ export const UploadPage: React.FC = () => {
   const handleModeChange = (newMode: UploadMode) => {
     setMode(newMode);
     setFolderFiles([]);
+    setLocalPath('');
     if (newMode === 'file') {
       setName('Single File Scan');
       setDescription('DNA Scan on single file code block');
@@ -69,18 +73,28 @@ export const UploadPage: React.FC = () => {
     setLoading(true);
 
     const projectType = mode === 'repository' ? 'REPOSITORY' : mode === 'folder' ? 'FOLDER' : 'FILE';
+    
+    // Determine path
+    let pathToSend = '';
+    if (mode === 'folder' && folderSource === 'localPath') {
+      pathToSend = localPath;
+    } else if (mode === 'file' && fileSource === 'localPath') {
+      pathToSend = localPath;
+    }
+
     const project = await createProject(
-      name || (mode === 'repository' ? 'New Repository' : 'New Folder'),
+      name || (mode === 'repository' ? 'New Repository' : (mode === 'folder' ? 'New Folder' : 'New File')),
       projectType,
       mode === 'repository' ? gitUrl : '',
-      description
+      description,
+      pathToSend
     );
 
     if (project) {
-      if (mode === 'file') {
+      if (mode === 'file' && fileSource === 'paste') {
         // Upload the pasted file content
         await uploadCode(project.id, fileName, fileContent, fileLanguage);
-      } else if (mode === 'folder' && folderFiles.length > 0) {
+      } else if (mode === 'folder' && folderSource === 'upload' && folderFiles.length > 0) {
         // Map extensions to language names
         const extMap: Record<string, string> = {
           'java': 'Java',
@@ -219,84 +233,167 @@ export const UploadPage: React.FC = () => {
                 )}
 
                 {mode === 'folder' && (
-                  <div className="p-8 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-center space-y-4">
-                    <UploadCloud className="w-12 h-12 text-slate-500 mx-auto" />
-                    <div>
-                      <h4 className="font-semibold text-white">Select Folder</h4>
-                      {folderFiles.length > 0 ? (
-                        <p className="text-xs text-emerald-400 mt-1">✓ {folderFiles.length} files selected in "{name}" folder</p>
-                      ) : (
-                        <p className="text-xs text-slate-500 mt-1">Drag and drop code files or select project directory from disk</p>
-                      )}
+                  <div className="space-y-4">
+                    <div className="flex gap-2 p-1 bg-slate-950/60 border border-white/5 rounded-xl w-fit">
+                      <button
+                        type="button"
+                        onClick={() => setFolderSource('upload')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${folderSource === 'upload' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Upload Folder Files
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFolderSource('localPath')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${folderSource === 'localPath' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Scan Local Folder Path
+                      </button>
                     </div>
-                    <input 
-                      type="file" 
-                      id="folder-upload" 
-                      className="hidden" 
-                      {...({
-                        webkitdirectory: "",
-                        directory: "",
-                        multiple: true
-                      } as any)}
-                      onChange={handleFolderChange}
-                    />
-                    <label 
-                      htmlFor="folder-upload" 
-                      className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-4 py-2 rounded-lg cursor-pointer border border-white/5 transition-colors"
-                    >
-                      Browse Folder
-                    </label>
+
+                    {folderSource === 'upload' ? (
+                      <div className="p-8 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-center space-y-4">
+                        <UploadCloud className="w-12 h-12 text-slate-500 mx-auto" />
+                        <div>
+                          <h4 className="font-semibold text-white">Select Folder</h4>
+                          {folderFiles.length > 0 ? (
+                            <p className="text-xs text-emerald-400 mt-1">✓ {folderFiles.length} files selected in "{name}" folder</p>
+                          ) : (
+                            <p className="text-xs text-slate-500 mt-1">Drag and drop code files or select project directory from disk</p>
+                          )}
+                        </div>
+                        <input 
+                          type="file" 
+                          id="folder-upload" 
+                          className="hidden" 
+                          {...({
+                            webkitdirectory: "",
+                            directory: "",
+                            multiple: true
+                          } as any)}
+                          onChange={handleFolderChange}
+                        />
+                        <label 
+                          htmlFor="folder-upload" 
+                          className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-4 py-2 rounded-lg cursor-pointer border border-white/5 transition-colors"
+                        >
+                          Browse Folder
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-400">Absolute Folder Path (on Local Disk)</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. C:/projects/my-web-app or /home/user/project"
+                          value={localPath}
+                          onChange={(e) => {
+                            setLocalPath(e.target.value);
+                            if (!name) {
+                              const parts = e.target.value.split(/[/\\]/);
+                              const lastPart = parts[parts.length - 1] || '';
+                              if (lastPart) setName(lastPart);
+                            }
+                          }}
+                          className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500/40 transition-colors"
+                        />
+                        <p className="text-[10px] text-slate-500">The backend will scan and analyze the directory structure directly from this local filesystem path.</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {mode === 'file' && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="flex gap-2 p-1 bg-slate-950/60 border border-white/5 rounded-xl w-fit">
+                      <button
+                        type="button"
+                        onClick={() => setFileSource('paste')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${fileSource === 'paste' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Paste Source Code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFileSource('localPath')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${fileSource === 'localPath' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Scan Local File Path
+                      </button>
+                    </div>
+
+                    {fileSource === 'paste' ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-400">File Name</label>
+                            <input
+                              type="text"
+                              required
+                              value={fileName}
+                              onChange={(e) => setFileName(e.target.value)}
+                              className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-indigo-500/40"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-400">Syntax Language</label>
+                            <select
+                              value={fileLanguage}
+                              onChange={(e) => setFileLanguage(e.target.value)}
+                              className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-indigo-500/40"
+                            >
+                              <option>Java</option>
+                              <option>Python</option>
+                              <option>JavaScript</option>
+                              <option>TypeScript</option>
+                              <option>XML</option>
+                              <option>YAML</option>
+                              <option>Plain Text</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-400">Source Code Block</label>
+                          <div className="h-64 border border-white/5 rounded-xl overflow-hidden">
+                            <Editor
+                              height="100%"
+                              theme="vs-dark"
+                              language={fileLanguage.toLowerCase()}
+                              value={fileContent}
+                              onChange={(val) => setFileContent(val || '')}
+                              options={{
+                                minimap: { enabled: false },
+                                fontSize: 12,
+                                fontFamily: 'Fira Code'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-400">File Name</label>
+                        <label className="text-xs font-semibold text-slate-400">Absolute File Path (on Local Disk)</label>
                         <input
                           type="text"
                           required
-                          value={fileName}
-                          onChange={(e) => setFileName(e.target.value)}
-                          className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-indigo-500/40"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-400">Syntax Language</label>
-                        <select
-                          value={fileLanguage}
-                          onChange={(e) => setFileLanguage(e.target.value)}
-                          className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-indigo-500/40"
-                        >
-                          <option>Java</option>
-                          <option>Python</option>
-                          <option>JavaScript</option>
-                          <option>TypeScript</option>
-                          <option>XML</option>
-                          <option>YAML</option>
-                          <option>Plain Text</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Source Code Block</label>
-                      <div className="h-64 border border-white/5 rounded-xl overflow-hidden">
-                        <Editor
-                          height="100%"
-                          theme="vs-dark"
-                          language={fileLanguage.toLowerCase()}
-                          value={fileContent}
-                          onChange={(val) => setFileContent(val || '')}
-                          options={{
-                            minimap: { enabled: false },
-                            fontSize: 12,
-                            fontFamily: 'Fira Code'
+                          placeholder="e.g. C:/projects/my-web-app/src/main/java/App.java"
+                          value={localPath}
+                          onChange={(e) => {
+                            setLocalPath(e.target.value);
+                            const parts = e.target.value.split(/[/\\]/);
+                            const fileBasename = parts[parts.length - 1] || '';
+                            if (fileBasename) {
+                              setFileName(fileBasename);
+                              if (!name) setName(fileBasename);
+                            }
                           }}
+                          className="w-full bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500/40 transition-colors"
                         />
+                        <p className="text-[10px] text-slate-500">The backend will analyze this single file directly from the local filesystem path.</p>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 

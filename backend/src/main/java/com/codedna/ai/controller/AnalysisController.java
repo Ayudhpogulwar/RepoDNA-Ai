@@ -98,12 +98,17 @@ public class AnalysisController {
         }
 
         // Save uploaded file content directly to DB
+        String relativePath = request.getFileName().replace('\\', '/');
+        String fileName = relativePath.contains("/") 
+                ? relativePath.substring(relativePath.lastIndexOf('/') + 1) 
+                : relativePath;
+
         ProjectFile projectFile = ProjectFile.builder()
                 .project(project)
-                .fileName(request.getFileName())
-                .filePath(request.getFileName())
+                .fileName(fileName)
+                .filePath(relativePath)
                 .content(request.getContent())
-                .extension(request.getFileName().substring(request.getFileName().lastIndexOf('.') + 1))
+                .extension(fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.') + 1) : "")
                 .language(request.getLanguage() != null ? request.getLanguage() : "Plain Text")
                 .size((long) request.getContent().length())
                 .complexity(1)
@@ -111,10 +116,6 @@ public class AnalysisController {
                 .build();
 
         projectFileRepository.save(projectFile);
-
-        // Update project path
-        project.setLocalPath(new File(".").getAbsolutePath());
-        projectRepository.save(project);
 
         return ResponseEntity.ok("File uploaded successfully.");
     }
