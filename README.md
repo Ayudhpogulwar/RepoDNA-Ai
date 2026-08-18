@@ -67,23 +67,31 @@ npm run dev
 
 ---
 
-### 🛠️ Direct Push Workflow (Working on `main` Branch)
+### 🛠️ Pull Request Workflow (Review & Merge by Project Lead)
 
-Since you are a collaborator on this repository, you can push directly to `main` without creating separate branches:
+To ensure the project owner reviews and approves all changes before merging into `main`:
 
-1. **Pull the latest code** before making any changes:
+1. **Pull latest code** from `main`:
    ```bash
    git pull origin main
    ```
 
-2. **Make your changes** in the codebase.
+2. **Create a new branch** for your work:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-3. **Commit and push** directly to `main`:
+3. **Commit and push** your branch to GitHub:
    ```bash
    git add .
-   git commit -m "Description of changes made"
-   git push origin main
+   git commit -m "Description of feature or fix"
+   git push origin feature/your-feature-name
    ```
+
+4. **Create a Pull Request (PR)** on GitHub:
+   - Go to [Ayudhpogulwar/RepoDNA-Ai](https://github.com/Ayudhpogulwar/RepoDNA-Ai).
+   - Click **Compare & pull request**.
+   - The project owner (**Ayudh**) will review, test, and merge your code into `main`.
 
 ---
 
