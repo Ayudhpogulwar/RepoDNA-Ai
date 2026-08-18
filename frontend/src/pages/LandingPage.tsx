@@ -79,7 +79,7 @@ export const LandingPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 pt-24 pb-20 flex-grow flex flex-col items-center justify-center text-center space-y-16 relative z-10">
         
         {/* Hero Section */}
-        <div className="space-y-6 max-w-4xl relative z-10 opacity-0 animate-fade-in-up">
+        <div className="space-y-6 max-w-4xl relative z-10 animate-fade-in-up">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full text-indigo-400 text-xs font-bold tracking-wider uppercase mb-2 shadow-lg shadow-indigo-500/10 hover:border-indigo-400/50 transition-all duration-300 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" /> 
             <span>Next-Gen Software Intelligence</span>
@@ -98,7 +98,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Quick URL Input with Animated Pulse Focus */}
-        <div className="w-full max-w-xl opacity-0 animate-fade-in-up animation-delay-100">
+        <div className="w-full max-w-xl animate-fade-in-up animation-delay-100">
           <form 
             onSubmit={handleQuickAnalyze} 
             className="w-full p-2 bg-slate-900/80 border border-white/10 focus-within:border-indigo-500/60 rounded-2xl flex items-center gap-2 backdrop-blur-xl transition-all duration-500 focus-within:shadow-[0_0_45px_rgba(99,102,241,0.3)] shadow-2xl hover:border-white/20"
@@ -121,7 +121,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Floating Quick Stats Banner */}
-        <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 opacity-0 animate-fade-in-up animation-delay-200">
+        <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up animation-delay-200">
           {metrics.map((m) => (
             <div 
               key={m.label} 
@@ -141,7 +141,7 @@ export const LandingPage: React.FC = () => {
           {cards.map((c) => (
             <div 
               key={c.title} 
-              className={`group opacity-0 animate-fade-in-up ${c.delay}`}
+              className={`group animate-fade-in-up ${c.delay}`}
             >
               <GlassCard 
                 className={`text-left flex flex-col justify-between h-80 border border-white/5 transition-all duration-500 hover:-translate-y-3 ${c.borderColor} ${c.glowColor} relative overflow-hidden`}
@@ -170,7 +170,8 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Platform Features Grid */}
-        <div className="border-t border-white/5 pt-16 w-full space-y-12 opacity-0 animate-fade-in-up animation-delay-500">
+        <div className="border-t border-white/5 pt-16 w-full space-y-12 animate-fade-in-up animation-delay-500">
+
           <div className="space-y-2">
             <h2 className="text-3xl font-bold text-white tracking-tight">Full-Stack Intelligence Features</h2>
             <p className="text-slate-400 text-sm max-w-xl mx-auto">Everything you need to inspect, understand, and audit modern software projects in one place.</p>
