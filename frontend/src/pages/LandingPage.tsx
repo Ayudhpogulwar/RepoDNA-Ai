@@ -71,12 +71,26 @@ export const LandingPage: React.FC = () => {
     { label: 'Accuracy Rating', value: '99.8%', icon: CheckCircle2 },
   ];
 
+  const marqueeItems = [
+    '⚡ Real-time AST Parsing',
+    '🛡️ Static Vulnerability Audit',
+    '📊 CycloneDX & SPDX SBOM Export',
+    '🧬 Interactive React Flow Mindmaps',
+    '🤖 Local Gemini 1.5 RAG Vector Indexing',
+    '🔍 Cyclomatic Complexity Scoring',
+    '🚀 Instant GitHub Repo Scanner'
+  ];
+
   return (
     <div className="relative min-h-screen bg-[#0B0F17] overflow-hidden flex flex-col justify-between bg-grid">
       {/* Background neon animated glow orbs */}
       <div className="glow-primary top-[8%] left-[8%] animate-pulse-glow" />
       <div className="glow-secondary top-[40%] right-[5%] animate-pulse-glow" style={{ animationDelay: '2s' }} />
       <div className="glow-accent bottom-[10%] left-[25%] animate-pulse-glow" style={{ animationDelay: '4s' }} />
+
+      {/* Rotating Background Tech HUD Ring */}
+      <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] border border-indigo-500/10 rounded-full animate-spin-slow pointer-events-none z-0 border-dashed" />
+      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] border border-purple-500/10 rounded-full animate-spin-slow pointer-events-none z-0" style={{ animationDirection: 'reverse' }} />
 
       {/* Floating particles rising upwards */}
       <div className="absolute top-[20%] left-[15%] w-2 h-2 rounded-full bg-indigo-400/40 blur-[1px] animate-particle-1 pointer-events-none" />
@@ -86,7 +100,7 @@ export const LandingPage: React.FC = () => {
       {/* Animated Floating Radial Ambient Aura behind hero title */}
       <div className="absolute top-[8%] left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[130px] pointer-events-none z-0 animate-float-slow" />
 
-      <main className="max-w-7xl mx-auto px-6 pt-20 pb-20 flex-grow flex flex-col items-center justify-center text-center space-y-16 relative z-10">
+      <main className="max-w-7xl mx-auto px-6 pt-20 pb-16 flex-grow flex flex-col items-center justify-center text-center space-y-16 relative z-10">
         
         {/* Hero Section */}
         <div className="space-y-6 max-w-4xl relative z-10">
@@ -132,6 +146,18 @@ export const LandingPage: React.FC = () => {
             </button>
           </form>
         </div>
+
+        {/* 🏃 CONTINUOUSLY MOVING INFINITE TICKER MARQUEE BANNER */}
+        <div className="w-full overflow-hidden py-3 bg-indigo-950/30 border-y border-indigo-500/20 backdrop-blur-md relative z-10">
+          <div className="animate-marquee items-center gap-8">
+            {[...marqueeItems, ...marqueeItems].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-xs font-mono font-semibold text-indigo-300/90 whitespace-nowrap bg-indigo-500/10 px-3.5 py-1 rounded-full border border-indigo-500/20">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
 
         {/* Live Interactive Feature Scanner Preview Showcase */}
         <div className="w-full max-w-4xl bg-slate-900/60 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden text-left space-y-6">
