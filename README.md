@@ -67,23 +67,23 @@ npm run dev
 
 ---
 
-### 🛠️ Working Workflow for Collaborators
+### 🛠️ Direct Push Workflow (Working on `main` Branch)
 
-1. **Pull latest changes** before starting work:
+Since you are a collaborator on this repository, you can push directly to `main` without creating separate branches:
+
+1. **Pull the latest code** before making any changes:
    ```bash
    git pull origin main
    ```
-2. **Create a new branch** for your feature or fix:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Commit and push** your work:
+
+2. **Make your changes** in the codebase.
+
+3. **Commit and push** directly to `main`:
    ```bash
    git add .
-   git commit -m "Add feature description"
-   git push origin feature/your-feature-name
+   git commit -m "Description of changes made"
+   git push origin main
    ```
-4. **Open a Pull Request (PR)** on GitHub to merge into `main`.
 
 ---
 
