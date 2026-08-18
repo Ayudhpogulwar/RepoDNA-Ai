@@ -51,34 +51,47 @@ public class FileAnalyzerService {
             return projectFiles;
         }
 
-        Files.walk(baseDir.toPath())
-            .filter(Files::isRegularFile)
-            .filter(path -> {
-                String p = path.toString().replace('\\', '/').toLowerCase();
-                return !p.contains("/.git/") &&
-                       !p.contains("/node_modules/") &&
-                       !p.contains("/target/") &&
-                       !p.contains("/venv/") &&
-                       !p.contains("/.venv/") &&
-                       !p.contains("/build/") &&
-                       !p.contains("/dist/") &&
-                       !p.contains("/bin/") &&
-                       !p.contains("/obj/") &&
-                       !p.contains("/.idea/");
-            })
-            .forEach(path -> {
+        scanDirectoryRecursive(project, baseDir, baseDir, projectFiles);
+        return projectFiles;
+    }
+
+    private void scanDirectoryRecursive(Project project, File currentDir, File baseDir, List<ProjectFile> projectFiles) {
+        File[] children = currentDir.listFiles();
+        if (children == null) return;
+
+        for (File child : children) {
+            String name = child.getName().toLowerCase();
+            if (child.isDirectory()) {
+                // Instantly skip entering ignored directory structures
+                if (name.equals(".git") || 
+                    name.equals("node_modules") || 
+                    name.equals("target") || 
+                    name.equals("venv") || 
+                    name.equals(".venv") || 
+                    name.equals("build") || 
+                    name.equals("dist") || 
+                    name.equals("bin") || 
+                    name.equals("obj") || 
+                    name.equals(".idea") ||
+                    name.equals(".metadata") ||
+                    name.equals("out") ||
+                    name.equals("gradle") ||
+                    name.equals(".gradle") ||
+                    name.equals(".settings")) {
+                    continue;
+                }
+                scanDirectoryRecursive(project, child, baseDir, projectFiles);
+            } else if (child.isFile()) {
                 try {
-                    File file = path.toFile();
-                    ProjectFile projectFile = analyzeSingleFile(project, file, baseDir);
+                    ProjectFile projectFile = analyzeSingleFile(project, child, baseDir);
                     if (projectFile != null) {
                         projectFiles.add(projectFile);
                     }
                 } catch (Exception e) {
-                    log.error("Failed to analyze file {}: {}", path, e.getMessage());
+                    log.error("Failed to analyze file {}: {}", child.getAbsolutePath(), e.getMessage());
                 }
-            });
-
-        return projectFiles;
+            }
+        }
     }
 
     public ProjectFile analyzeSingleFile(Project project, File file, File baseDir) throws IOException {

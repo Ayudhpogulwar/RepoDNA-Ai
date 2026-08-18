@@ -137,13 +137,9 @@ public class AnalysisService {
         }
 
         if (project.getType() == Project.ProjectType.REPOSITORY || scanLocalPath) {
-            // Clean up previous run's data to prevent database constraint violations
-            deleteExistingProjectData(project);
-
             // 1. Scan and read file structure from cloned repository or local disk path
             projectAnalysisProgress.put(id, "Reading Files and Detecting Languages... (30%)");
             files = fileAnalyzerService.analyzeProjectFiles(project, scanDir != null ? scanDir : dir);
-            projectFileRepository.saveAll(files);
         } else {
             // For FOLDER and FILE projects, files are uploaded directly via REST API.
             // Load them from the database instead of scanning the backend root dir.
@@ -157,34 +153,18 @@ public class AnalysisService {
                     f.setComplexity(complexity);
                 }
             }
-            projectFileRepository.saveAll(files);
-
-            // Clean up old reports and dependencies using native queries to bypass Hibernate constraint bugs
-            entityManager.createNativeQuery("DELETE FROM sbom_reports WHERE project_id = ?")
-                    .setParameter(1, project.getId())
-                    .executeUpdate();
-            entityManager.createNativeQuery("DELETE FROM security_reports WHERE project_id = ?")
-                    .setParameter(1, project.getId())
-                    .executeUpdate();
-            entityManager.createNativeQuery("DELETE FROM dependencies WHERE project_id = ?")
-                    .setParameter(1, project.getId())
-                    .executeUpdate();
-            entityManager.flush();
         }
 
         // 2. Parse dependencies
         projectAnalysisProgress.put(id, "Finding Dependencies and Generating SBOM... (50%)");
         List<Dependency> dependencies = fileAnalyzerService.parseDependencies(project, files);
-        dependencyRepository.saveAll(dependencies);
 
         // Generate CycloneDX SBOM
         SBOMReport sbom = sbomService.generateSbom(project, dependencies, "CycloneDX");
-        sbomReportRepository.save(sbom);
 
         // 3. Security Scan
         projectAnalysisProgress.put(id, "Running Security Scanner... (70%)");
         SecurityReport securityReport = securityService.runScan(project, files, dependencies);
-        securityReportRepository.save(securityReport);
 
         // 4. Create RAG knowledge base
         projectAnalysisProgress.put(id, "Creating AI Knowledge Base... (85%)");
@@ -257,6 +237,13 @@ public class AnalysisService {
         health = Math.max(20, Math.min(100, health));
         project.setHealthScore(health);
 
+        // === PERSISTENCE & DELETIONS TRANSACTIONALLY AT THE VERY END ===
+        deleteExistingProjectData(project);
+
+        projectFileRepository.saveAll(files);
+        dependencyRepository.saveAll(dependencies);
+        sbomReportRepository.save(sbom);
+        securityReportRepository.save(securityReport);
         projectRepository.save(project);
 
         // Record history log snapshot
