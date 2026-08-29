@@ -7,8 +7,7 @@ import {
   FileCode2, 
   UploadCloud, 
   ArrowLeft,
-  ShieldCheck,
-  Dna
+  ShieldCheck
 } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 import Editor from '@monaco-editor/react';

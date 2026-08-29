@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Dna, Lock, Mail, User as UserIcon, AlertCircle } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, AlertCircle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 
 export const RegisterPage: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAnalysis } from '../context/AnalysisContext';
-import { Terminal, CheckCircle2, AlertTriangle, Dna } from 'lucide-react';
+import { Terminal, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 
 export const AnalysisProgressPage: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Dna, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 
 export const LoginPage: React.FC = () => {
