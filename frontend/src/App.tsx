@@ -61,9 +61,9 @@ const ProjectLayout = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-[#111827]">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] bg-[#111827]">
       <Sidebar />
-      <main className="flex-grow p-6 lg:p-8 overflow-y-auto max-w-[calc(100vw-16rem)]">
+      <main className="flex-grow p-4 md:p-6 lg:p-8 overflow-y-auto w-full lg:max-w-[calc(100vw-16rem)]">
         <Outlet />
       </main>
     </div>

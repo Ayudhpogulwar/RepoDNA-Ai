@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-6 lg:p-8 space-y-8 relative">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8 relative">
       <div className="glow-primary top-[10%] left-[5%]" />
       <div className="glow-secondary bottom-[10%] right-[5%]" />
 
@@ -99,7 +99,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
         <GlassCard className="flex items-center gap-4">
           <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
             <FolderKanban className="w-6 h-6" />

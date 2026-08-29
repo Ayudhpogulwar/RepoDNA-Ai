@@ -148,7 +148,7 @@ export const UploadPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-6 lg:p-8 flex flex-col items-center justify-center relative">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#111827] p-4 md:p-6 lg:p-8 flex flex-col items-center justify-center relative">
       <div className="glow-primary top-[15%] left-[10%]" />
       <div className="glow-secondary bottom-[15%] right-[10%]" />
 
@@ -167,11 +167,11 @@ export const UploadPage: React.FC = () => {
             <GlassCard className="p-8 space-y-6">
               <h2 className="text-2xl font-bold text-white">Create Analysis Workspace</h2>
               
-              <div className="flex gap-4 border-b border-white/5 pb-4">
+              <div className="flex flex-wrap gap-2 md:gap-4 border-b border-white/5 pb-4">
                 <button
                   type="button"
                   onClick={() => handleModeChange('repository')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${mode === 'repository' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all ${mode === 'repository' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
                   <GitBranch className="w-4 h-4" />
                   <span>GitHub URL</span>
@@ -179,7 +179,7 @@ export const UploadPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleModeChange('folder')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${mode === 'folder' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all ${mode === 'folder' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
                   <FolderGit className="w-4 h-4" />
                   <span>Local Folder</span>
@@ -187,7 +187,7 @@ export const UploadPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleModeChange('file')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${mode === 'file' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all ${mode === 'file' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
                   <FileCode2 className="w-4 h-4" />
                   <span>Paste Code</span>

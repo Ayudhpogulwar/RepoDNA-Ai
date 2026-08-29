@@ -125,7 +125,7 @@ export const RepoDashboard: React.FC = () => {
       </div>
 
       {/* Scores and Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         
         {/* Project metrics */}
         <GlassCard className="flex flex-col justify-between space-y-6">

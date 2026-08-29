@@ -245,10 +245,10 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
   );
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col md:flex-row border border-white/5 rounded-2xl overflow-hidden glass-container">
+    <div className="min-h-[calc(100vh-6rem)] md:h-[calc(100vh-4rem)] flex flex-col lg:flex-row border border-white/5 rounded-2xl overflow-hidden glass-container">
       
       {/* File Tree Sidebar */}
-      <div className="w-full md:w-64 border-r border-white/5 flex flex-col h-full bg-slate-950/20">
+      <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col h-60 lg:h-full bg-slate-950/20 shrink-0">
         <div className="p-4 border-b border-white/5 space-y-2.5">
           <h4 className="font-bold text-white text-sm">File Explorer</h4>
           <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-slate-300">
@@ -281,14 +281,14 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
       </div>
 
       {/* Monaco Editor Container */}
-      <div className="flex-grow flex flex-col h-full relative">
+      <div className="flex-grow flex flex-col min-h-[350px] lg:h-full relative border-b lg:border-b-0 border-white/5">
         {selectedFile ? (
           <>
             {/* Editor File Tab Header */}
             <div className="h-10 px-4 border-b border-white/5 flex items-center justify-between bg-slate-950/40 text-xs">
               <div className="flex items-center gap-2 text-slate-300">
                 <File className="w-3.5 h-3.5 text-indigo-400" />
-                <span>{selectedFile.fileName}</span>
+                <span className="truncate max-w-[200px]">{selectedFile.fileName}</span>
               </div>
               <span className="text-[10px] text-slate-500 font-mono uppercase bg-slate-800 px-2 py-0.5 rounded border border-white/5">
                 {selectedFile.language}
@@ -305,9 +305,9 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
                 onChange={(val) => setEditorContent(val || '')}
                 options={{
                   readOnly: true,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontFamily: 'Fira Code',
-                  minimap: { enabled: true },
+                  minimap: { enabled: false },
                   scrollBeyondLastLine: false,
                   lineNumbers: 'on',
                   cursorBlinking: 'smooth'
@@ -323,7 +323,7 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
       </div>
 
       {/* AI Explanation Panel */}
-      <div className="w-full md:w-80 border-l border-white/5 flex flex-col h-full bg-slate-950/20">
+      <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col min-h-[300px] lg:h-full bg-slate-950/20 shrink-0">
         <div className="p-4 border-b border-white/5 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-indigo-400" />
           <h4 className="font-bold text-white text-sm">AI Explanation</h4>
@@ -346,7 +346,7 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
 
             {/* Text explanation */}
             <div 
-              className="flex-grow bg-slate-950/30 border border-white/5 rounded-xl p-4 text-xs text-slate-300 overflow-y-auto leading-relaxed"
+              className="flex-grow bg-slate-950/30 border border-white/5 rounded-xl p-4 text-xs text-slate-300 overflow-y-auto leading-relaxed max-h-[250px] lg:max-h-none"
               dangerouslySetInnerHTML={{ __html: renderMarkdownAsHtml(aiExplanation) }}
             />
 
