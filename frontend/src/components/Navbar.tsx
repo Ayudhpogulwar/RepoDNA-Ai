@@ -17,9 +17,9 @@ export const Navbar: React.FC = () => {
   return (
     <header className="glass-nav sticky top-0 w-full h-16 px-4 md:px-6 flex items-center justify-between z-50">
       {/* Brand Logo */}
-      <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
-        <div className="p-2 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-xl text-white shadow-md shadow-indigo-500/10 group-hover:scale-105 transition-transform">
-          <Dna className="w-5 h-5 md:w-6 md:h-6 animate-pulse" />
+      <Link to="/" className="flex items-center gap-2.5 group" onClick={() => setMobileMenuOpen(false)}>
+        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform flex items-center justify-center bg-slate-900 border border-purple-500/30">
+          <img src="/logo.png" alt="RepoDNA Logo" className="w-full h-full object-cover" />
         </div>
         <span className="font-extrabold text-lg md:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
           RepoDNA-<span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text font-medium text-sm md:text-base">Ai</span>

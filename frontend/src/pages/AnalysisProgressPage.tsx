@@ -57,7 +57,7 @@ export const AnalysisProgressPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             {!isCompleted && !isFailed && (
-              <Dna className="w-6 h-6 text-indigo-400 animate-spin" />
+              <img src="/logo.png" alt="Analyzing Logo" className="w-7 h-7 rounded-lg animate-spin" />
             )}
             {isCompleted && (
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />

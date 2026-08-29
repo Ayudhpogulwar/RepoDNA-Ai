@@ -37,8 +37,8 @@ export const RegisterPage: React.FC = () => {
       <GlassCard className="w-full max-w-md p-8 relative z-10 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
-            <Dna className="w-6 h-6 animate-pulse" />
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-900 border border-purple-500/30 overflow-hidden shadow-lg shadow-purple-500/20 p-1 flex items-center justify-center">
+            <img src="/logo.png" alt="RepoDNA Logo" className="w-full h-full object-cover rounded-xl" />
           </div>
           <h2 className="text-2xl font-bold text-white">Create Your Account</h2>
           <p className="text-xs text-slate-500">Unlock automatic repository scanning and node diagrams</p>

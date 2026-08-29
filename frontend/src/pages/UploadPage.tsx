@@ -402,7 +402,7 @@ export const UploadPage: React.FC = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md shadow-indigo-600/10 disabled:opacity-50 mt-4 flex items-center justify-center gap-2"
                 >
-                  <Dna className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <img src="/logo.png" alt="Scan Logo" className={`w-5 h-5 rounded ${loading ? 'animate-spin' : ''}`} />
                   <span>{loading ? 'Configuring Scan...' : 'Start CodeDNA Scanner'}</span>
                 </button>
               </form>
