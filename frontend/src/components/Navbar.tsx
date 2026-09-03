@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, LayoutGrid, ShieldCheck, Menu, X } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutGrid, ShieldCheck, Menu, X, Zap, Loader2 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isBackendWarming } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -16,15 +16,24 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="glass-nav sticky top-0 w-full h-16 px-4 md:px-6 flex items-center justify-between z-50">
-      {/* Brand Logo */}
-      <Link to="/" className="flex items-center gap-2.5 group" onClick={() => setMobileMenuOpen(false)}>
-        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform flex items-center justify-center bg-slate-900 border border-purple-500/30">
-          <img src="/logo.png" alt="RepoDNA Logo" className="w-full h-full object-cover" />
-        </div>
-        <span className="font-extrabold text-lg md:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-          RepoDNA-<span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text font-medium text-sm md:text-base">Ai</span>
-        </span>
-      </Link>
+      {/* Brand Logo & Warmup Indicator */}
+      <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-2.5 group" onClick={() => setMobileMenuOpen(false)}>
+          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform flex items-center justify-center bg-slate-900 border border-purple-500/30">
+            <img src="/logo.png" alt="RepoDNA Logo" className="w-full h-full object-cover" />
+          </div>
+          <span className="font-extrabold text-lg md:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+            RepoDNA-<span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text font-medium text-sm md:text-base">Ai</span>
+          </span>
+        </Link>
+
+        {isBackendWarming && (
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-400 text-xs font-medium animate-pulse">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+            <span>Warming Backend Service...</span>
+          </div>
+        )}
+      </div>
 
       {/* Desktop Auth Actions & Navigation */}
       <div className="hidden md:flex items-center gap-4">

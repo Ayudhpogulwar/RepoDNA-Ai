@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  isBackendWarming: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -18,14 +19,49 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_BASE 
-  ? `${import.meta.env.VITE_API_BASE}/auth` 
-  : 'https://repodna-ai.onrender.com/api/auth';
+const RAW_API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
+const API_BASE = `${RAW_API_BASE}/auth`;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('codedna_token'));
   const [loading, setLoading] = useState(true);
+  const [isBackendWarming, setIsBackendWarming] = useState(false);
+
+  // Keep-alive heartbeat & warmup ping
+  useEffect(() => {
+    let warmTimer: NodeJS.Timeout;
+
+    const pingHealth = async () => {
+      // Set warming status if response takes longer than 1.5s
+      warmTimer = setTimeout(() => {
+        setIsBackendWarming(true);
+      }, 1500);
+
+      try {
+        const res = await fetch(`${RAW_API_BASE}/health`, { cache: 'no-store' });
+        if (res.ok) {
+          console.log('[Keep-Alive] Backend health ping OK');
+        }
+      } catch (err) {
+        console.warn('[Keep-Alive] Ping attempted; backend warming up or offline.');
+      } finally {
+        clearTimeout(warmTimer);
+        setIsBackendWarming(false);
+      }
+    };
+
+    // Initial ping on app mount
+    pingHealth();
+
+    // Heartbeat every 10 minutes (600,000 ms) to keep Render instance awake while tab is open
+    const heartbeat = setInterval(pingHealth, 600000);
+
+    return () => {
+      clearTimeout(warmTimer);
+      clearInterval(heartbeat);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -136,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, isBackendWarming, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

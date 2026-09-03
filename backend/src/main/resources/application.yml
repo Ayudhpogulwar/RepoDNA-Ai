@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: repodna-ai
+  main:
+    lazy-initialization: true
   datasource:
     # MySQL Database Config (Active)
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/codedna?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
@@ -13,12 +15,15 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:Sai@123456}
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
     hibernate:
       ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         format_sql: true
+        temp:
+          use_jdbc_metadata_defaults: false
 
 # Security & App Configurations
 app:
