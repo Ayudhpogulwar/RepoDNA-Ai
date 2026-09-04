@@ -9,11 +9,12 @@ import {
   AlertTriangle, 
   Compass, 
   Gauge, 
-  ShieldAlert 
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 
 export const ImpactPredictorPage: React.FC = () => {
-  const { files } = useAnalysis();
+  const { files, activeProgress } = useAnalysis();
 
   const [selectedImpactFile, setSelectedImpactFile] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
@@ -296,10 +297,25 @@ export const ImpactPredictorPage: React.FC = () => {
 
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-28 border border-dashed border-white/10 rounded-2xl bg-slate-900/10">
-          <GitPullRequest className="w-14 h-14 text-slate-600 mb-4 animate-pulse" />
-          <span className="text-sm font-bold text-white">No Simulation Loaded</span>
-          <p className="text-xs text-slate-500 mt-1.5">Select a repository file above to calculate automated regression impacts.</p>
+        <div className="flex flex-col items-center justify-center py-28 border border-dashed border-white/10 rounded-2xl bg-slate-900/10 text-center p-6">
+          {activeProgress && activeProgress !== 'Ready' && !activeProgress.startsWith('Error') ? (
+            <>
+              <Loader2 className="w-10 h-10 text-indigo-400 animate-spin mb-3" />
+              <span className="text-sm font-bold text-white">Analyzing Repository Architecture & Building Dependency Graph...</span>
+              <p className="text-xs font-mono bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/5 text-slate-400 mt-2">
+                {activeProgress}
+              </p>
+              <p className="text-xs text-slate-500 max-w-xs mt-2">
+                Files will populate in the selector above as soon as file scanning completes.
+              </p>
+            </>
+          ) : (
+            <>
+              <GitPullRequest className="w-14 h-14 text-slate-600 mb-4 animate-pulse" />
+              <span className="text-sm font-bold text-white">No Simulation Loaded</span>
+              <p className="text-xs text-slate-500 mt-1.5">Select a repository file above to calculate automated regression impacts.</p>
+            </>
+          )}
         </div>
       )}
     </div>

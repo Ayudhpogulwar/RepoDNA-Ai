@@ -8,12 +8,13 @@ import {
   Download, 
   CheckCircle2, 
   AlertTriangle, 
-  Skull
+  Skull,
+  Loader2
 } from 'lucide-react';
 
 export const SbomPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { dependencies, selectedProject } = useAnalysis();
+  const { dependencies, selectedProject, activeProgress } = useAnalysis();
   
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -163,8 +164,20 @@ export const SbomPage: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={5} className="text-center py-16 text-slate-500 font-medium">
-                    <Layers className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                    <span>No dependencies matched search query.</span>
+                    {activeProgress && activeProgress !== 'Ready' && !activeProgress.startsWith('Error') ? (
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-2" />
+                        <span className="text-sm font-semibold text-white">Analyzing Dependencies & Generating SBOM...</span>
+                        <span className="text-xs font-mono bg-slate-900/80 px-3 py-1 rounded-lg border border-white/5 text-slate-400">
+                          {activeProgress}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <Layers className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                        <span>No dependencies matched search query or parsed yet.</span>
+                      </>
+                    )}
                   </td>
                 </tr>
               )}

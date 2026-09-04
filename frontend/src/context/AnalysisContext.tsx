@@ -171,7 +171,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const selectProject = async (projectId: number) => {
-    if (!token) return;
+    const authToken = token || localStorage.getItem('codedna_token');
+    if (!authToken) return;
     try {
       const res = await fetch(`${API_BASE}/projects/${projectId}`, { headers: getHeaders() });
       if (res.ok) {
@@ -383,10 +384,10 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (res.ok) {
             const progress = await res.text();
             setActiveProgress(progress);
+            // Reload project files & state live as analysis progresses
+            await selectProject(projectId);
             if (progress === 'Ready' || progress.startsWith('Error')) {
               clearInterval(poll);
-              // Reload details
-              selectProject(projectId);
             }
           } else {
             clearInterval(poll);
