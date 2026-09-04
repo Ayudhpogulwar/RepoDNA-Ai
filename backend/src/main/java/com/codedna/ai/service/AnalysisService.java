@@ -155,6 +155,10 @@ public class AnalysisService {
             }
         }
 
+        // Save files immediately after reading so they are queryable in Code Explorer right away
+        deleteExistingProjectData(project);
+        projectFileRepository.saveAll(files);
+
         // 2. Parse dependencies
         projectAnalysisProgress.put(id, "Finding Dependencies and Generating SBOM... (50%)");
         List<Dependency> dependencies = fileAnalyzerService.parseDependencies(project, files);
@@ -237,10 +241,7 @@ public class AnalysisService {
         health = Math.max(20, Math.min(100, health));
         project.setHealthScore(health);
 
-        // === PERSISTENCE & DELETIONS TRANSACTIONALLY AT THE VERY END ===
-        deleteExistingProjectData(project);
-
-        projectFileRepository.saveAll(files);
+        // === PERSISTENCE FOR REPORTS AND PROJECT SNAPSHOT ===
         dependencyRepository.saveAll(dependencies);
         sbomReportRepository.save(sbom);
         securityReportRepository.save(securityReport);

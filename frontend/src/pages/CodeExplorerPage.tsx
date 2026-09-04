@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAnalysis } from '../context/AnalysisContext';
 import type { ProjectFile } from '../context/AnalysisContext';
-import { File, Search, Sparkles, Cpu } from 'lucide-react';
+import { File, Search, Sparkles, Cpu, Loader2 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
 export const CodeExplorerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const fileQuery = searchParams.get('file');
-  const { files } = useAnalysis();
+  const { files, activeProgress } = useAnalysis();
 
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
   const [editorContent, setEditorContent] = useState('');
@@ -316,8 +316,21 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
             </div>
           </>
         ) : (
-          <div className="flex-grow flex items-center justify-center text-slate-500 text-xs">
-            No files parsed in this project workspace.
+          <div className="flex-grow flex flex-col items-center justify-center p-6 text-center text-slate-400 text-xs gap-3">
+            {activeProgress && activeProgress !== 'Ready' && !activeProgress.startsWith('Error') ? (
+              <>
+                <Loader2 className="w-7 h-7 text-indigo-400 animate-spin mb-1" />
+                <p className="font-semibold text-white text-sm">Analyzing Project Workspace...</p>
+                <p className="text-slate-400 font-mono bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/5 text-[11px]">
+                  {activeProgress}
+                </p>
+                <p className="text-slate-500 text-[11px] max-w-xs mt-1">
+                  Scanned files will populate in the explorer sidebar automatically as soon as parsing completes.
+                </p>
+              </>
+            ) : (
+              <p className="text-slate-500">No files parsed in this project workspace.</p>
+            )}
           </div>
         )}
       </div>
