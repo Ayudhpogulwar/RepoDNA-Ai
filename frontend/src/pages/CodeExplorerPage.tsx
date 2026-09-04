@@ -9,7 +9,7 @@ export const CodeExplorerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const fileQuery = searchParams.get('file');
-  const { files, activeProgress } = useAnalysis();
+  const { files, activeProgress, selectedProject, triggerAnalysis } = useAnalysis();
 
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
   const [editorContent, setEditorContent] = useState('');
@@ -329,7 +329,19 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
                 </p>
               </>
             ) : (
-              <p className="text-slate-500">No files parsed in this project workspace.</p>
+              <div className="space-y-3 max-w-sm">
+                <p className="text-slate-400 font-semibold text-sm">No files parsed in this project workspace yet.</p>
+                <p className="text-slate-500 text-xs">Run the CodeDNA scanner to clone, parse files, and index your repository architecture.</p>
+                {selectedProject && (
+                  <button
+                    onClick={() => triggerAnalysis(selectedProject.id)}
+                    className="mt-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mx-auto"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Run CodeDNA Scanner</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
