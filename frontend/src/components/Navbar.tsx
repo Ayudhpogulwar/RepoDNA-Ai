@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, LayoutGrid, ShieldCheck, Menu, X, Zap, Loader2 } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutGrid, ShieldCheck, Menu, X, Loader2 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { user, logout, isBackendWarming } = useAuth();

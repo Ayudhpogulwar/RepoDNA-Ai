@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Keep-alive heartbeat & warmup ping
   useEffect(() => {
-    let warmTimer: NodeJS.Timeout;
+    let warmTimer: ReturnType<typeof setTimeout>;
 
     const pingHealth = async () => {
       // Set warming status if response takes longer than 1.5s
