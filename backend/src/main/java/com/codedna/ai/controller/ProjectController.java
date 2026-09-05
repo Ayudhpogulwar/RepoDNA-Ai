@@ -26,19 +26,22 @@ public class ProjectController {
     private final UserRepository userRepository;
     private final AnalysisRunRepository analysisRunRepository;
     private final SecurityReportRepository securityReportRepository;
+    private final com.codedna.ai.service.AnalysisService analysisService;
 
     public ProjectController(
             ProjectRepository projectRepository, 
             ProjectFileRepository projectFileRepository, 
             UserRepository userRepository,
             AnalysisRunRepository analysisRunRepository,
-            SecurityReportRepository securityReportRepository
+            SecurityReportRepository securityReportRepository,
+            com.codedna.ai.service.AnalysisService analysisService
     ) {
         this.projectRepository = projectRepository;
         this.projectFileRepository = projectFileRepository;
         this.userRepository = userRepository;
         this.analysisRunRepository = analysisRunRepository;
         this.securityReportRepository = securityReportRepository;
+        this.analysisService = analysisService;
     }
 
     public static class CreateProjectRequest {
@@ -186,7 +189,23 @@ public class ProjectController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        ProjectFile file = projectFileRepository.findByProjectAndFilePath(project, path).orElse(null);
+        String normalizedPath = path.replace('\\', '/').replaceAll("^/", "");
+        ProjectFile file = projectFileRepository.findByProjectAndFilePath(project, normalizedPath)
+                .or(() -> projectFileRepository.findByProjectAndFilePath(project, path))
+                .or(() -> projectFileRepository.findByProjectAndFilePath(project, path.replace('/', '\\')))
+                .orElse(null);
+        
+        if (file == null) {
+            List<ProjectFile> allFiles = projectFileRepository.findByProject(project);
+            file = allFiles.stream()
+                    .filter(f -> f.getFilePath() != null && 
+                            (f.getFilePath().equalsIgnoreCase(normalizedPath) || 
+                             f.getFilePath().endsWith(normalizedPath) || 
+                             normalizedPath.endsWith(f.getFilePath())))
+                    .findFirst()
+                    .orElse(null);
+        }
+
         if (file == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(file);
     }

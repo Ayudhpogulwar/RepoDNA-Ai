@@ -53,7 +53,7 @@ export const AdminPage: React.FC = () => {
     setError('');
     setActionSuccess('');
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
       const res = await fetch(`${API_BASE}/auth/users/${userId}/role?role=${newRole}`, {
         method: 'PUT',
         headers: {

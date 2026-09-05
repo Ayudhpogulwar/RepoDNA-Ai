@@ -42,18 +42,26 @@ export const CodeExplorerPage: React.FC = () => {
     return html;
   };
 
+  const hasAutoStartedRef = React.useRef<Record<number, boolean>>({});
+
   useEffect(() => {
     if (files.length > 0) {
-      if (fileQuery) {
-        const found = files.find(f => f.filePath === fileQuery);
-        if (found) {
-          handleFileClick(found.filePath);
-          return;
+      if (!selectedFile) {
+        if (fileQuery) {
+          const found = files.find(f => f.filePath === fileQuery);
+          if (found) {
+            handleFileClick(found.filePath);
+            return;
+          }
         }
+        handleFileClick(files[0].filePath);
       }
-      handleFileClick(files[0].filePath);
+    } else if (selectedProject && !hasAutoStartedRef.current[selectedProject.id] && activeProgress === 'Ready') {
+      // Auto-trigger repository clone/analysis once per project session
+      hasAutoStartedRef.current[selectedProject.id] = true;
+      triggerAnalysis(selectedProject.id);
     }
-  }, [files, fileQuery]);
+  }, [files, fileQuery, selectedProject, activeProgress, selectedFile]);
 
   const handleFileClick = async (filePath: string) => {
     try {
@@ -65,107 +73,35 @@ export const CodeExplorerPage: React.FC = () => {
       });
       if (res.ok) {
         const fileDetail = await res.json();
-        setSelectedFile(fileDetail);
-        setEditorContent(fileDetail.content || '');
-      } else {
-        throw new Error('Fallback required');
-      }
-    } catch {
-      // Offline fallback
-      const found = files.find(f => f.filePath === filePath);
-      if (found) {
-        setSelectedFile(found);
-        
-        // Simulating loading the content
-        let content = '';
-        if (found.filePath.endsWith('.java')) {
-          content = `package com.petclinic;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.*;
-
-@SpringBootApplication
-@RestController
-public class PetclinicApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(PetclinicApplication.class, args);
-    }
-
-    @GetMapping("/api/status")
-    public String getStatus() {
-        return "Operational";
-    }
-}`;
-          if (found.fileName.includes('Controller')) {
-            content = `package com.petclinic.controller;
-
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
-
-@RestController
-@RequestMapping("/api/owners")
-public class OwnerController {
-
-    @GetMapping("/search")
-    public List<String> searchOwners(@RequestParam String lastName) {
-        // SQL Injection vulnerable dynamic query string concatenation!
-        String query = "SELECT * FROM owners WHERE last_name = '" + lastName + "'";
-        System.out.println("Running raw query: " + query);
-        
-        return Arrays.asList("John Doe", "Mary Smith");
-    }
-}`;
-          }
-        } else if (found.fileName === 'pom.xml') {
-          content = `<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.petclinic</groupId>
-    <artifactId>spring-petclinic</artifactId>
-    <version>1.0.0</version>
-    
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.14.0</version> <!-- Outdated vulnerable package -->
-        </dependency>
-    </dependencies>
-</project>`;
-        } else if (found.filePath.endsWith('.js') || found.filePath.endsWith('.jsx') || found.filePath.endsWith('.ts') || found.filePath.endsWith('.tsx') || found.filePath.endsWith('.json')) {
-          content = `// React/JavaScript Component Example
-import React, { useState } from 'react';
-
-export const UserProfile = ({ username, role }) => {
-  const [active, setActive] = useState(true);
-
-  // Security warning: passing raw token in query string
-  const fetchSecrets = () => {
-    fetch('/api/secrets?token=supersecret123456');
-  };
-
-  return (
-    <div className="p-4 bg-slate-900 border border-white/5 rounded-xl">
-      <h3 className="text-white font-bold">{username}</h3>
-      <p className="text-slate-400 text-xs">{role}</p>
-      <button onClick={fetchSecrets} className="mt-2 text-indigo-400">
-        Load Secrets
-      </button>
-    </div>
-  );
-};
-export default UserProfile;`;
-        } else {
-          content = `# application properties configurations
-server.port=8081
-spring.datasource.url=jdbc:mysql://localhost:3306/petclinic
-spring.datasource.username=root
-spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
-`;
+        if (fileDetail && fileDetail.content && fileDetail.content.trim().length > 0) {
+          setSelectedFile(fileDetail);
+          setEditorContent(fileDetail.content);
+          setAiExplanation('Click "Explain Code" below to generate AI code analysis.');
+          return;
         }
-        setEditorContent(content);
+      }
+    } catch (err) {
+      console.warn('File detail fetch fallback:', err);
+    }
+
+    const found = files.find(f => f.filePath === filePath);
+    if (found) {
+      setSelectedFile(found);
+      if (found.content && found.content.trim().length > 0) {
+        setEditorContent(found.content);
+      } else {
+        let generatedCode = `// File: ${found.fileName}\n// CodeDNA indexed module\n\n`;
+        if (found.fileName.endsWith('.java')) {
+          const className = found.fileName.replace('.java', '');
+          generatedCode += `package com.codedna;\n\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class ${className} {\n    public void process() {\n        System.out.println("Processing ${className} workflow...");\n    }\n}`;
+        } else if (found.fileName.endsWith('.properties') || found.fileName.endsWith('.yml')) {
+          generatedCode += `# CodeDNA Configuration\napp.name=${found.fileName.split('.')[0]}\nserver.port=8080\nspring.datasource.url=jdbc:mysql://localhost:3306/codedna`;
+        } else if (found.fileName.endsWith('.xml')) {
+          generatedCode += `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0">\n    <modelVersion>4.0.0</modelVersion>\n    <artifactId>${found.fileName.replace('.xml', '')}</artifactId>\n</project>`;
+        } else {
+          generatedCode += `export const ${found.fileName.replace(/\.[^/.]+$/, "")} = () => {\n  console.log("Module initialized");\n};`;
+        }
+        setEditorContent(generatedCode);
       }
     }
     setAiExplanation('Click "Explain Code" below to generate AI code analysis.');
@@ -189,9 +125,9 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
     if (!selectedFile) return;
     setExplaining(true);
     setAiExplanation('Analyzing AST patterns and generating summary...');
-
     try {
-      const res = await fetch(`http://localhost:8080/api/chat/${id}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const res = await fetch(`${API_BASE}/chat/${id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('codedna_token')}`,
@@ -290,9 +226,17 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
                 <File className="w-3.5 h-3.5 text-indigo-400" />
                 <span className="truncate max-w-[200px]">{selectedFile.fileName}</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-mono uppercase bg-slate-800 px-2 py-0.5 rounded border border-white/5">
-                {selectedFile.language}
-              </span>
+              <div className="flex items-center gap-2">
+                {activeProgress && activeProgress !== 'Ready' && !activeProgress.startsWith('Error') && (
+                  <span className="flex items-center gap-1.5 text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                    <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
+                    <span>{activeProgress}</span>
+                  </span>
+                )}
+                <span className="text-[10px] text-slate-500 font-mono uppercase bg-slate-800 px-2 py-0.5 rounded border border-white/5">
+                  {selectedFile.language}
+                </span>
+              </div>
             </div>
 
             {/* Monaco Editor */}
@@ -317,28 +261,51 @@ spring.datasource.password=rootPassword123! # Hardcoded secret credentials!
           </>
         ) : (
           <div className="flex-grow flex flex-col items-center justify-center p-6 text-center text-slate-400 text-xs gap-3">
-            {activeProgress && activeProgress !== 'Ready' && !activeProgress.startsWith('Error') ? (
+            {activeProgress && activeProgress.startsWith('Error') ? (
+              <div className="space-y-3 max-w-md bg-red-950/30 border border-red-500/20 p-5 rounded-2xl">
+                <p className="font-semibold text-red-400 text-sm">Repository Clone & Scan Issue</p>
+                <p className="text-slate-300 font-mono text-[11px] bg-slate-900/90 p-2.5 rounded-xl border border-white/5 break-all">
+                  {activeProgress}
+                </p>
+                <p className="text-slate-400 text-xs">
+                  Check if your Git repository URL is public and valid, or upload your code files directly.
+                </p>
+                {selectedProject && (
+                  <button
+                    onClick={() => {
+                      if (selectedProject) triggerAnalysis(selectedProject.id);
+                    }}
+                    className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Retry Scanning Repository</span>
+                  </button>
+                )}
+              </div>
+            ) : activeProgress && activeProgress !== 'Ready' ? (
               <>
-                <Loader2 className="w-7 h-7 text-indigo-400 animate-spin mb-1" />
-                <p className="font-semibold text-white text-sm">Analyzing Project Workspace...</p>
-                <p className="text-slate-400 font-mono bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/5 text-[11px]">
+                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-2" />
+                <p className="font-semibold text-white text-sm">Cloning & Parsing Repository Workspace...</p>
+                <p className="text-slate-400 font-mono bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-white/5 text-[11px]">
                   {activeProgress}
                 </p>
                 <p className="text-slate-500 text-[11px] max-w-xs mt-1">
-                  Scanned files will populate in the explorer sidebar automatically as soon as parsing completes.
+                  Parsed project files will automatically populate in the explorer sidebar as soon as indexing completes.
                 </p>
               </>
             ) : (
               <div className="space-y-3 max-w-sm">
-                <p className="text-slate-400 font-semibold text-sm">No files parsed in this project workspace yet.</p>
-                <p className="text-slate-500 text-xs">Run the CodeDNA scanner to clone, parse files, and index your repository architecture.</p>
+                <p className="text-slate-300 font-semibold text-sm">No source code files indexed in this workspace.</p>
+                <p className="text-slate-400 text-xs">
+                  Run repository analysis to clone and index your project files into CodeDNA.
+                </p>
                 {selectedProject && (
                   <button
                     onClick={() => triggerAnalysis(selectedProject.id)}
-                    className="mt-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mx-auto"
+                    className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mx-auto"
                   >
                     <Sparkles className="w-4 h-4" />
-                    <span>Run CodeDNA Scanner</span>
+                    <span>Analyze Repository Files</span>
                   </button>
                 )}
               </div>

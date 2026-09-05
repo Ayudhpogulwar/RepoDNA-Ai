@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const RAW_API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
+const RAW_API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
 const API_BASE = `${RAW_API_BASE}/auth`;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

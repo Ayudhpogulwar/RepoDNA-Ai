@@ -35,7 +35,7 @@ app:
     # but the service will handle empty keys gracefully.
     gemini:
       key: AIzaSyC3fxUG4wL1xe0pGJcbvvLfJY9lss-LJzs
-      model: gemini-flash-latest
+      model: gemini-1.5-flash
     openai:
       key: ${OPENAI_API_KEY:}
       model: gpt-4o-mini

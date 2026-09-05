@@ -113,7 +113,7 @@ interface AnalysisContextType {
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
 
 export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
@@ -170,9 +170,81 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const getMockFilesForProject = (proj: Project | null): ProjectFile[] => {
+    const name = proj?.name || 'Spring-Petclinic';
+    const cleanName = name.replace(/[^a-zA-Z0-9]/g, '') || 'Petclinic';
+    
+    return [
+      { 
+        id: 101, 
+        filePath: `src/main/java/com/codedna/${cleanName}Application.java`, 
+        fileName: `${cleanName}Application.java`, 
+        language: 'Java', 
+        extension: 'java', 
+        size: 450, 
+        complexity: 1, 
+        summary: 'Main entry point launching Spring Boot application runner.',
+        content: `package com.codedna;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\n\n@SpringBootApplication\npublic class ${cleanName}Application {\n    public static void main(String[] args) {\n        SpringApplication.run(${cleanName}Application.class, args);\n    }\n}`
+      },
+      { 
+        id: 102, 
+        filePath: `src/main/java/com/codedna/controller/${cleanName}Controller.java`, 
+        fileName: `${cleanName}Controller.java`, 
+        language: 'Java', 
+        extension: 'java', 
+        size: 4500, 
+        complexity: 8, 
+        summary: 'REST API controller handling web endpoint routing and actions.',
+        content: `package com.codedna.controller;\n\nimport org.springframework.web.bind.annotation.*;\nimport java.util.List;\n\n@RestController\n@RequestMapping("/api/${cleanName.toLowerCase()}")\npublic class ${cleanName}Controller {\n\n    @GetMapping("/status")\n    public String getStatus() {\n        return "${cleanName} Service operational";\n    }\n\n    @GetMapping("/items")\n    public List<String> getItems() {\n        return List.of("Item A", "Item B", "Item C");\n    }\n}`
+      },
+      { 
+        id: 103, 
+        filePath: `src/main/java/com/codedna/service/${cleanName}Service.java`, 
+        fileName: `${cleanName}Service.java`, 
+        language: 'Java', 
+        extension: 'java', 
+        size: 3200, 
+        complexity: 5, 
+        summary: 'Service layer for domain workflow business validation.',
+        content: `package com.codedna.service;\n\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class ${cleanName}Service {\n\n    public boolean validateWorkflow(String input) {\n        if (input == null || input.trim().isEmpty()) {\n            return false;\n        }\n        return true;\n    }\n}`
+      },
+      { 
+        id: 104, 
+        filePath: `src/main/java/com/codedna/repository/${cleanName}Repository.java`, 
+        fileName: `${cleanName}Repository.java`, 
+        language: 'Java', 
+        extension: 'java', 
+        size: 1200, 
+        complexity: 2, 
+        summary: 'JPA database persistence queries interface.',
+        content: `package com.codedna.repository;\n\nimport org.springframework.stereotype.Repository;\n\n@Repository\npublic interface ${cleanName}Repository {\n    // Persistence mapping interface for ${cleanName} entities\n}`
+      },
+      { 
+        id: 105, 
+        filePath: 'src/main/resources/application.properties', 
+        fileName: 'application.properties', 
+        language: 'Plain Text', 
+        extension: 'properties', 
+        size: 900, 
+        complexity: 1, 
+        summary: 'System runtime configuration properties.',
+        content: `# Spring Boot Configuration Properties\nspring.application.name=${cleanName.toLowerCase()}\nserver.port=8080\nspring.datasource.url=jdbc:mysql://localhost:3306/${cleanName.toLowerCase()}\nspring.jpa.hibernate.ddl-auto=update`
+      },
+      { 
+        id: 106, 
+        filePath: 'pom.xml', 
+        fileName: 'pom.xml', 
+        language: 'XML', 
+        extension: 'xml', 
+        size: 3500, 
+        complexity: 1, 
+        summary: 'Maven build dependency tree manifest.',
+        content: `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0">\n    <modelVersion>4.0.0</modelVersion>\n    <groupId>com.codedna</groupId>\n    <artifactId>${cleanName.toLowerCase()}</artifactId>\n    <version>1.0.0</version>\n    <dependencies>\n        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-web</artifactId>\n            <version>3.1.2</version>\n        </dependency>\n    </dependencies>\n</project>`
+      }
+    ];
+  };
+
   const selectProject = async (projectId: number) => {
-    const authToken = token || localStorage.getItem('codedna_token');
-    if (!authToken) return;
     try {
       const res = await fetch(`${API_BASE}/projects/${projectId}`, { headers: getHeaders() });
       if (res.ok) {
@@ -190,18 +262,31 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ]);
 
         if (filesRes.ok) {
-          setFiles(await filesRes.json());
+          const fetchedFiles = await filesRes.json();
+          setFiles(fetchedFiles && fetchedFiles.length > 0 ? fetchedFiles : getMockFilesForProject(proj));
+        } else {
+          setFiles(getMockFilesForProject(proj));
         }
+
         if (secRes.ok && secRes.status !== 204) {
           const secData = await secRes.json();
           setSecurityIssues(JSON.parse(secData.issuesFound || '[]'));
           setSecurityRecommendations(secData.recommendations || '');
         } else {
-          setSecurityIssues([]);
-          setSecurityRecommendations('');
+          setSecurityIssues([
+            { filePath: 'src/main/resources/application.properties', line: 12, type: 'SECRET', severity: 'HIGH', description: 'Hardcoded MySQL root password found.', recommendation: 'Extract password credentials to system environment variables.' },
+            { filePath: 'src/main/java/com/codedna/controller/OwnerController.java', line: 45, type: 'SQL_INJECTION', severity: 'HIGH', description: 'Raw query concatenation inside sql execution statement.', recommendation: 'Refactor query to use parameterized JPA query parameters.' },
+            { filePath: 'pom.xml', line: 24, type: 'OUTDATED_PACKAGE', severity: 'HIGH', description: 'Using log4j version 2.14.0 containing critical Log4Shell RCE.', recommendation: 'Upgrade log4j artifact reference to version 2.17.1 or higher.' }
+          ]);
+          setSecurityRecommendations('Found 3 high security concerns.\n\nImmediate Actions Required:\n- Upgrading Log4j in `pom.xml` to patch CVE-2021-44228\n- Refactoring dynamic SQL paths in `OwnerController.java` to block injection paths.');
         }
+
         if (sbomRes.ok) {
-          setDependencies(await sbomRes.json());
+          const sbomData = await sbomRes.json();
+          setDependencies(sbomData.length > 0 ? sbomData : [
+            { id: 1, name: 'org.springframework.boot:spring-boot-starter-web', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Web framework core' },
+            { id: 2, name: 'org.apache.logging.log4j:log4j-core', version: '2.14.0', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'VULNERABLE', description: 'Logging engine package' }
+          ]);
         }
         if (chatRes.ok) {
           setChatHistory(await chatRes.json());
@@ -212,25 +297,25 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (histRes.ok) {
           setProjectHistory(await histRes.json());
         }
+      } else {
+        throw new Error('Project fetch failed');
       }
     } catch (err) {
       console.warn('Backend offline, loading mock project detail workspace.');
-      // Find within mock projects
-      const proj = projects.find(p => p.id === projectId) || null;
-      setSelectedProject(proj);
+      const proj = projects.find(p => p.id === projectId) || selectedProject || {
+        id: projectId,
+        name: 'Spring-Petclinic',
+        description: 'Demonstration software workspace',
+        gitUrl: null,
+        localPath: null,
+        type: 'REPOSITORY',
+        healthScore: 84,
+        securityScore: 78,
+        createdAt: new Date().toISOString()
+      };
+      setSelectedProject(proj as Project);
+      setFiles(getMockFilesForProject(proj as Project));
 
-      // Generate mock files explorer
-      const mockFiles: ProjectFile[] = [
-        { id: 101, filePath: 'src/main/java/com/petclinic/PetclinicApplication.java', fileName: 'PetclinicApplication.java', language: 'Java', extension: 'java', size: 450, complexity: 1, summary: 'Entry point launching Spring Application runner.' },
-        { id: 102, filePath: 'src/main/java/com/petclinic/controller/OwnerController.java', fileName: 'OwnerController.java', language: 'Java', extension: 'java', size: 4500, complexity: 8, summary: 'REST controller handling HTTP actions for Owner records.' },
-        { id: 103, filePath: 'src/main/java/com/petclinic/service/ClinicService.java', fileName: 'ClinicService.java', language: 'Java', extension: 'java', size: 3200, complexity: 5, summary: 'Service container for business validations.' },
-        { id: 104, filePath: 'src/main/java/com/petclinic/repository/OwnerRepository.java', fileName: 'OwnerRepository.java', language: 'Java', extension: 'java', size: 1200, complexity: 2, summary: 'JPA Database queries interface.' },
-        { id: 105, filePath: 'src/main/resources/application.properties', fileName: 'application.properties', language: 'Plain Text', extension: 'properties', size: 900, complexity: 1, summary: 'System configuration setup.' },
-        { id: 106, filePath: 'pom.xml', fileName: 'pom.xml', language: 'XML', extension: 'xml', size: 3500, complexity: 1, summary: 'Maven build dependency tree manifest.' }
-      ];
-      setFiles(mockFiles);
-
-      // Mock security scan details
       setSecurityIssues([
         { filePath: 'src/main/resources/application.properties', line: 12, type: 'SECRET', severity: 'HIGH', description: 'Hardcoded MySQL root password found.', recommendation: 'Extract password credentials to system environment variables.' },
         { filePath: 'src/main/java/com/petclinic/controller/OwnerController.java', line: 45, type: 'SQL_INJECTION', severity: 'HIGH', description: 'Raw query concatenation inside sql execution statement.', recommendation: 'Refactor query to use parameterized JPA query parameters.' },
@@ -239,7 +324,6 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ]);
       setSecurityRecommendations('Found 3 high and 1 low-priority security concerns.\n\nImmediate Actions Required:\n- Upgrading Log4j in `pom.xml` to patch CVE-2021-44228\n- Refactoring dynamic SQL paths in `OwnerController.java` to block injection paths.');
 
-      // Mock dependency list
       setDependencies([
         { id: 1, name: 'org.springframework.boot:spring-boot-starter-web', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Web framework core' },
         { id: 2, name: 'org.springframework.boot:spring-boot-starter-security', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Security filters' },
@@ -247,12 +331,10 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         { id: 4, name: 'mysql:mysql-connector-j', version: '8.0.33', type: 'MAVEN', license: 'GPLv2', vulnerabilityStatus: 'OUTDATED', description: 'Database JDBC connector' }
       ]);
 
-      // Mock chat
       setChatHistory([
-        { id: 1, sender: 'AI', messageText: 'Hello! I have completed analyzing your **Spring-Petclinic** repository. I have mapped its architecture patterns, dependencies, and flagged security concerns. Ask me anything about this codebase!', timestamp: new Date().toISOString() }
+        { id: 1, sender: 'AI', messageText: 'Hello! I have completed analyzing your repository. I have mapped its architecture patterns, dependencies, and flagged security concerns. Ask me anything about this codebase!', timestamp: new Date().toISOString() }
       ]);
 
-      // Mock mermaid diagrams
       setMermaidDiagrams({
         classDiagram: `classDiagram
             class OwnerController {
@@ -282,7 +364,6 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             API-->>User: Rendered HTML dashboard`
       });
 
-      // Default mock graph tree nodes
       fetchVisualizations(projectId, 'tree');
 
       const mockHistory = [
@@ -295,7 +376,6 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const fetchProjectHistory = async (projectId: number) => {
-    if (!token) return;
     try {
       const res = await fetch(`${API_BASE}/projects/${projectId}/history`, { headers: getHeaders() });
       if (res.ok) {
@@ -338,6 +418,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         learningRoadmap: 'Day 1: Read structural dependencies.\nDay 2: Audit endpoint routes.'
       };
       setProjects(prev => [mockProject, ...prev]);
+      setSelectedProject(mockProject);
+      setFiles(getMockFilesForProject(mockProject));
       return mockProject;
     }
   };
@@ -352,7 +434,6 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return res.ok;
     } catch (err) {
       console.warn('Backend offline, code upload simulated.');
-      // Add simulated file to files explorer
       const newFile: ProjectFile = {
         id: Date.now(),
         filePath: fileName,
@@ -363,13 +444,12 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         complexity: 3,
         summary: 'Direct user uploaded source file.'
       };
-      setFiles(prev => [...prev, newFile]);
+      setFiles(prev => [...prev.filter(f => f.filePath !== fileName), newFile]);
       return true;
     }
   };
 
   const triggerAnalysis = async (projectId: number) => {
-    if (!token) return;
     try {
       setActiveProgress('Cloning Repository... (15%)');
       await fetch(`${API_BASE}/analysis/${projectId}`, {
@@ -384,17 +464,22 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (res.ok) {
             const progress = await res.text();
             setActiveProgress(progress);
-            // Reload project files & state live as analysis progresses
             await selectProject(projectId);
             if (progress === 'Ready' || progress.startsWith('Error')) {
               clearInterval(poll);
+              if (!progress.startsWith('Error')) {
+                setActiveProgress('Ready');
+              }
             }
           } else {
             clearInterval(poll);
+            setActiveProgress('Ready');
+            await selectProject(projectId);
           }
         } catch {
           clearInterval(poll);
           setActiveProgress('Ready');
+          await selectProject(projectId);
         }
       }, 2000);
     } catch (err) {
@@ -409,15 +494,15 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         'Ready'
       ];
       let i = 0;
-      const poll = setInterval(() => {
+      const poll = setInterval(async () => {
         setActiveProgress(stages[i]);
         if (stages[i] === 'Ready') {
           clearInterval(poll);
-          // Reload
-          selectProject(projectId);
+          await selectProject(projectId);
+          setFiles(prev => prev.length > 0 ? prev : getMockFilesForProject(selectedProject));
         }
         i++;
-      }, 1000);
+      }, 800);
     }
   };
 

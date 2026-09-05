@@ -58,7 +58,7 @@ export const SettingsPage: React.FC = () => {
     e.preventDefault();
     if (!isAdmin) return;
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
       const res = await fetch(`${API_BASE}/admin/settings`, {
         method: 'POST',
         headers: {
@@ -104,7 +104,7 @@ export const SettingsPage: React.FC = () => {
 
     setSavingPassword(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
       const res = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'PUT',
         headers: {
