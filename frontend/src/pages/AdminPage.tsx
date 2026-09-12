@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { GlassCard } from '../components/GlassCard';
 import { ShieldCheck, User as UserIcon, RefreshCw, AlertTriangle, ToggleLeft, ToggleRight, CheckCircle2 } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface UserData {
   id: number;
@@ -22,7 +23,6 @@ export const AdminPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
       const res = await fetch(`${API_BASE}/auth/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -53,7 +53,6 @@ export const AdminPage: React.FC = () => {
     setError('');
     setActionSuccess('');
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'https://repodna-ai.onrender.com/api';
       const res = await fetch(`${API_BASE}/auth/users/${userId}/role?role=${newRole}`, {
         method: 'PUT',
         headers: {

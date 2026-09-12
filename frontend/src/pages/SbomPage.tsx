@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAnalysis } from '../context/AnalysisContext';
 import { GlassCard } from '../components/GlassCard';
+import { API_BASE } from '../config/api';
 import { 
   Layers, 
   Search, 
@@ -46,7 +47,6 @@ export const SbomPage: React.FC = () => {
 
   const handleExport = async (format: 'cyclonedx' | 'spdx') => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
       const res = await fetch(`${API_BASE}/projects/${id}/sbom/report`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('codedna_token')}`,

@@ -23,6 +23,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import mermaid from 'mermaid';
+import { API_BASE } from '../config/api';
 
 type VisualizationType = 'tree' | 'dependencies' | 'flow' | 'class' | 'sequence' | 'data' | 'techdebt' | 'impact';
 
@@ -170,22 +171,15 @@ export const VisualizationsPage: React.FC = () => {
     if (activeTab === 'tree' || activeTab === 'dependencies' || activeTab === 'flow' || activeTab === 'data') {
       fetchVisualizations(Number(id), activeTab);
     } else if (activeTab === 'techdebt') {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
       fetch(`${API_BASE}/projects/${id}/visualizations/tech-debt`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('codedna_token')}` }
       })
       .then(res => res.json())
       .then(data => {
-        setTechDebtItems(data || []);
+        setTechDebtItems(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        // Fallback mock items
-        setTechDebtItems([
-          { filePath: 'src/main/java/com/petclinic/controller/OwnerController.java', fileName: 'OwnerController.java', language: 'Java', linesOfCode: 145, complexity: 12, debtScore: 88, debtLevel: 'CRITICAL', riskCategory: 'Security & Refactoring Risk', recommendation: 'High cyclomatic complexity and dynamic SQL injection flags. Refactor queries into JPA parameters.' },
-          { filePath: 'src/main/resources/application.properties', fileName: 'application.properties', language: 'Plain Text', linesOfCode: 32, complexity: 1, debtScore: 65, debtLevel: 'HIGH', riskCategory: 'Credentials Leak Risk', recommendation: 'Hardcoded database credentials detected. Extract password properties to environment secrets.' },
-          { filePath: 'src/main/java/com/petclinic/service/ClinicService.java', fileName: 'ClinicService.java', language: 'Java', linesOfCode: 210, complexity: 8, debtScore: 45, debtLevel: 'MEDIUM', riskCategory: 'Maintainability Bottleneck', recommendation: 'Service class exceeds 200 LOC. Decompose helper routines into dedicated validators.' },
-          { filePath: 'src/main/java/com/petclinic/PetclinicApplication.java', fileName: 'PetclinicApplication.java', language: 'Java', linesOfCode: 19, complexity: 1, debtScore: 12, debtLevel: 'LOW', riskCategory: 'Clean Code', recommendation: 'Logic paths are well-balanced.' }
-        ]);
+        setTechDebtItems([]);
       });
     }
   }, [id, activeTab]);

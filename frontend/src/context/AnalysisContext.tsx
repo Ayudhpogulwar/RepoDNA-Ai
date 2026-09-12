@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { API_BASE } from '../config/api';
 
 export interface Project {
   id: number;
@@ -113,8 +114,6 @@ interface AnalysisContextType {
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
-
 export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -148,100 +147,9 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setProjects(data);
       }
     } catch (err) {
-      console.warn('Backend offline, using mock projects.');
-      // Load pre-configured mock projects list
-      setProjects([
-        {
-          id: 1,
-          name: 'Spring-Petclinic',
-          description: 'A beautiful demonstration Spring Boot application illustrating MVC, JPA, and Security.',
-          gitUrl: 'https://github.com/spring-projects/spring-petclinic.git',
-          localPath: 'C:/Users/codedna/scratch/spring-petclinic',
-          type: 'REPOSITORY',
-          healthScore: 84,
-          securityScore: 78,
-          frameworks: 'Spring Boot, Spring Security, Spring Data JPA',
-          languages: 'Java, HTML, CSS, JavaScript',
-          createdAt: new Date().toISOString(),
-          summary: 'This project is a classic Spring Boot reference architecture showing web services controllers linked to database repositories.',
-          learningRoadmap: 'Day 1: Audit pom.xml and DB configs.\nDay 2: Trace controller endpoints mapping HTTP pathways.\nDay 3: Inspect Service layer workflows.'
-        }
-      ]);
+      console.warn('Backend unavailable while loading projects.');
+      setProjects([]);
     }
-  };
-
-  const getMockFilesForProject = (proj: Project | null): ProjectFile[] => {
-    const name = proj?.name || 'Spring-Petclinic';
-    const cleanName = name.replace(/[^a-zA-Z0-9]/g, '') || 'Petclinic';
-    
-    return [
-      { 
-        id: 101, 
-        filePath: `src/main/java/com/codedna/${cleanName}Application.java`, 
-        fileName: `${cleanName}Application.java`, 
-        language: 'Java', 
-        extension: 'java', 
-        size: 450, 
-        complexity: 1, 
-        summary: 'Main entry point launching Spring Boot application runner.',
-        content: `package com.codedna;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\n\n@SpringBootApplication\npublic class ${cleanName}Application {\n    public static void main(String[] args) {\n        SpringApplication.run(${cleanName}Application.class, args);\n    }\n}`
-      },
-      { 
-        id: 102, 
-        filePath: `src/main/java/com/codedna/controller/${cleanName}Controller.java`, 
-        fileName: `${cleanName}Controller.java`, 
-        language: 'Java', 
-        extension: 'java', 
-        size: 4500, 
-        complexity: 8, 
-        summary: 'REST API controller handling web endpoint routing and actions.',
-        content: `package com.codedna.controller;\n\nimport org.springframework.web.bind.annotation.*;\nimport java.util.List;\n\n@RestController\n@RequestMapping("/api/${cleanName.toLowerCase()}")\npublic class ${cleanName}Controller {\n\n    @GetMapping("/status")\n    public String getStatus() {\n        return "${cleanName} Service operational";\n    }\n\n    @GetMapping("/items")\n    public List<String> getItems() {\n        return List.of("Item A", "Item B", "Item C");\n    }\n}`
-      },
-      { 
-        id: 103, 
-        filePath: `src/main/java/com/codedna/service/${cleanName}Service.java`, 
-        fileName: `${cleanName}Service.java`, 
-        language: 'Java', 
-        extension: 'java', 
-        size: 3200, 
-        complexity: 5, 
-        summary: 'Service layer for domain workflow business validation.',
-        content: `package com.codedna.service;\n\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class ${cleanName}Service {\n\n    public boolean validateWorkflow(String input) {\n        if (input == null || input.trim().isEmpty()) {\n            return false;\n        }\n        return true;\n    }\n}`
-      },
-      { 
-        id: 104, 
-        filePath: `src/main/java/com/codedna/repository/${cleanName}Repository.java`, 
-        fileName: `${cleanName}Repository.java`, 
-        language: 'Java', 
-        extension: 'java', 
-        size: 1200, 
-        complexity: 2, 
-        summary: 'JPA database persistence queries interface.',
-        content: `package com.codedna.repository;\n\nimport org.springframework.stereotype.Repository;\n\n@Repository\npublic interface ${cleanName}Repository {\n    // Persistence mapping interface for ${cleanName} entities\n}`
-      },
-      { 
-        id: 105, 
-        filePath: 'src/main/resources/application.properties', 
-        fileName: 'application.properties', 
-        language: 'Plain Text', 
-        extension: 'properties', 
-        size: 900, 
-        complexity: 1, 
-        summary: 'System runtime configuration properties.',
-        content: `# Spring Boot Configuration Properties\nspring.application.name=${cleanName.toLowerCase()}\nserver.port=8080\nspring.datasource.url=jdbc:mysql://localhost:3306/${cleanName.toLowerCase()}\nspring.jpa.hibernate.ddl-auto=update`
-      },
-      { 
-        id: 106, 
-        filePath: 'pom.xml', 
-        fileName: 'pom.xml', 
-        language: 'XML', 
-        extension: 'xml', 
-        size: 3500, 
-        complexity: 1, 
-        summary: 'Maven build dependency tree manifest.',
-        content: `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0">\n    <modelVersion>4.0.0</modelVersion>\n    <groupId>com.codedna</groupId>\n    <artifactId>${cleanName.toLowerCase()}</artifactId>\n    <version>1.0.0</version>\n    <dependencies>\n        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-web</artifactId>\n            <version>3.1.2</version>\n        </dependency>\n    </dependencies>\n</project>`
-      }
-    ];
   };
 
   const selectProject = async (projectId: number) => {
@@ -250,6 +158,14 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (res.ok) {
         const proj = await res.json();
         setSelectedProject(proj);
+        setFiles([]);
+        setDependencies([]);
+        setSecurityIssues([]);
+        setSecurityRecommendations('');
+        setChatHistory([]);
+        setMermaidDiagrams(null);
+        setGraphData({ nodes: [], edges: [] });
+        setProjectHistory([]);
 
         // Fetch remaining workspace records in parallel
         const [filesRes, secRes, sbomRes, chatRes, vRes, histRes] = await Promise.all([
@@ -263,9 +179,9 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         if (filesRes.ok) {
           const fetchedFiles = await filesRes.json();
-          setFiles(fetchedFiles && fetchedFiles.length > 0 ? fetchedFiles : getMockFilesForProject(proj));
+          setFiles(Array.isArray(fetchedFiles) ? fetchedFiles : []);
         } else {
-          setFiles(getMockFilesForProject(proj));
+          setFiles([]);
         }
 
         if (secRes.ok && secRes.status !== 204) {
@@ -273,20 +189,15 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setSecurityIssues(JSON.parse(secData.issuesFound || '[]'));
           setSecurityRecommendations(secData.recommendations || '');
         } else {
-          setSecurityIssues([
-            { filePath: 'src/main/resources/application.properties', line: 12, type: 'SECRET', severity: 'HIGH', description: 'Hardcoded MySQL root password found.', recommendation: 'Extract password credentials to system environment variables.' },
-            { filePath: 'src/main/java/com/codedna/controller/OwnerController.java', line: 45, type: 'SQL_INJECTION', severity: 'HIGH', description: 'Raw query concatenation inside sql execution statement.', recommendation: 'Refactor query to use parameterized JPA query parameters.' },
-            { filePath: 'pom.xml', line: 24, type: 'OUTDATED_PACKAGE', severity: 'HIGH', description: 'Using log4j version 2.14.0 containing critical Log4Shell RCE.', recommendation: 'Upgrade log4j artifact reference to version 2.17.1 or higher.' }
-          ]);
-          setSecurityRecommendations('Found 3 high security concerns.\n\nImmediate Actions Required:\n- Upgrading Log4j in `pom.xml` to patch CVE-2021-44228\n- Refactoring dynamic SQL paths in `OwnerController.java` to block injection paths.');
+          setSecurityIssues([]);
+          setSecurityRecommendations('');
         }
 
         if (sbomRes.ok) {
           const sbomData = await sbomRes.json();
-          setDependencies(sbomData.length > 0 ? sbomData : [
-            { id: 1, name: 'org.springframework.boot:spring-boot-starter-web', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Web framework core' },
-            { id: 2, name: 'org.apache.logging.log4j:log4j-core', version: '2.14.0', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'VULNERABLE', description: 'Logging engine package' }
-          ]);
+          setDependencies(Array.isArray(sbomData) ? sbomData : []);
+        } else {
+          setDependencies([]);
         }
         if (chatRes.ok) {
           setChatHistory(await chatRes.json());
@@ -301,77 +212,28 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         throw new Error('Project fetch failed');
       }
     } catch (err) {
-      console.warn('Backend offline, loading mock project detail workspace.');
+      console.warn('Backend unavailable while loading project detail.');
       const proj = projects.find(p => p.id === projectId) || selectedProject || {
         id: projectId,
-        name: 'Spring-Petclinic',
-        description: 'Demonstration software workspace',
+        name: 'Unavailable project',
+        description: 'Project details could not be loaded from the backend.',
         gitUrl: null,
         localPath: null,
         type: 'REPOSITORY',
-        healthScore: 84,
-        securityScore: 78,
+        healthScore: 0,
+        securityScore: 0,
         createdAt: new Date().toISOString()
       };
       setSelectedProject(proj as Project);
-      setFiles(getMockFilesForProject(proj as Project));
+      setFiles([]);
+      setSecurityIssues([]);
+      setSecurityRecommendations('');
+      setDependencies([]);
 
-      setSecurityIssues([
-        { filePath: 'src/main/resources/application.properties', line: 12, type: 'SECRET', severity: 'HIGH', description: 'Hardcoded MySQL root password found.', recommendation: 'Extract password credentials to system environment variables.' },
-        { filePath: 'src/main/java/com/petclinic/controller/OwnerController.java', line: 45, type: 'SQL_INJECTION', severity: 'HIGH', description: 'Raw query concatenation inside sql execution statement.', recommendation: 'Refactor query to use parameterized JPA query parameters.' },
-        { filePath: 'pom.xml', line: 24, type: 'OUTDATED_PACKAGE', severity: 'HIGH', description: 'Using log4j version 2.14.0 containing critical Log4Shell RCE.', recommendation: 'Upgrade log4j artifact reference to version 2.17.1 or higher.' },
-        { filePath: 'src/main/java/com/petclinic/service/ClinicService.java', line: 98, type: 'CODE_SMELL', severity: 'LOW', description: 'Empty catch block suppresses all failures.', recommendation: 'Add logging using Logger statement inside exception catch block.' }
-      ]);
-      setSecurityRecommendations('Found 3 high and 1 low-priority security concerns.\n\nImmediate Actions Required:\n- Upgrading Log4j in `pom.xml` to patch CVE-2021-44228\n- Refactoring dynamic SQL paths in `OwnerController.java` to block injection paths.');
-
-      setDependencies([
-        { id: 1, name: 'org.springframework.boot:spring-boot-starter-web', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Web framework core' },
-        { id: 2, name: 'org.springframework.boot:spring-boot-starter-security', version: '3.1.2', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'SECURE', description: 'Security filters' },
-        { id: 3, name: 'org.apache.logging.log4j:log4j-core', version: '2.14.0', type: 'MAVEN', license: 'Apache-2.0', vulnerabilityStatus: 'VULNERABLE', description: 'Logging engine package' },
-        { id: 4, name: 'mysql:mysql-connector-j', version: '8.0.33', type: 'MAVEN', license: 'GPLv2', vulnerabilityStatus: 'OUTDATED', description: 'Database JDBC connector' }
-      ]);
-
-      setChatHistory([
-        { id: 1, sender: 'AI', messageText: 'Hello! I have completed analyzing your repository. I have mapped its architecture patterns, dependencies, and flagged security concerns. Ask me anything about this codebase!', timestamp: new Date().toISOString() }
-      ]);
-
-      setMermaidDiagrams({
-        classDiagram: `classDiagram
-            class OwnerController {
-                +getOwner()
-                +addOwner()
-            }
-            class ClinicService {
-                +findOwners()
-                +saveOwner()
-            }
-            class OwnerRepository {
-                +findByLastName()
-            }
-            OwnerController --> ClinicService : invokes
-            ClinicService --> OwnerRepository : queries`,
-        sequenceDiagram: `sequenceDiagram
-            actor User as Client
-            participant API as OwnerController
-            participant Svc as ClinicService
-            participant DB as OwnerRepository
-            
-            User->>API: GET /owners/find
-            API->>Svc: findOwners(lastName)
-            Svc->>DB: findByLastName(lastName)
-            DB-->>Svc: List<Owner> records
-            Svc-->>API: Processed records
-            API-->>User: Rendered HTML dashboard`
-      });
-
-      fetchVisualizations(projectId, 'tree');
-
-      const mockHistory = [
-        { id: 1, healthScore: 70, securityScore: 60, linesOfCode: 150, vulnerabilitiesCount: 12, runDate: new Date(Date.now() - 3 * 86400000).toISOString() },
-        { id: 2, healthScore: 78, securityScore: 72, linesOfCode: 168, vulnerabilitiesCount: 5, runDate: new Date(Date.now() - 1 * 86400000).toISOString() },
-        { id: 3, healthScore: 84, securityScore: 78, linesOfCode: 174, vulnerabilitiesCount: 2, runDate: new Date().toISOString() }
-      ];
-      setProjectHistory(mockHistory);
+      setChatHistory([]);
+      setMermaidDiagrams(null);
+      setGraphData({ nodes: [], edges: [] });
+      setProjectHistory([]);
     }
   };
 
@@ -401,26 +263,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       return null;
     } catch (err) {
-      console.warn('Backend offline, simulating project creation.');
-      const mockProject: Project = {
-        id: Date.now(),
-        name,
-        description,
-        gitUrl: gitUrl || null,
-        localPath: localPath || (gitUrl ? `C:/codedna-ai/uploads/repo-${Date.now()}` : 'C:/codedna-ai/uploads/folder-upload'),
-        type: type as any,
-        healthScore: 100,
-        securityScore: 100,
-        createdAt: new Date().toISOString(),
-        frameworks: 'React, Node.js',
-        languages: 'TypeScript, CSS, HTML',
-        summary: 'A custom software project workspace.',
-        learningRoadmap: 'Day 1: Read structural dependencies.\nDay 2: Audit endpoint routes.'
-      };
-      setProjects(prev => [mockProject, ...prev]);
-      setSelectedProject(mockProject);
-      setFiles(getMockFilesForProject(mockProject));
-      return mockProject;
+      console.warn('Backend unavailable while creating project.');
+      return null;
     }
   };
 
@@ -433,19 +277,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       return res.ok;
     } catch (err) {
-      console.warn('Backend offline, code upload simulated.');
-      const newFile: ProjectFile = {
-        id: Date.now(),
-        filePath: fileName,
-        fileName: fileName,
-        language: language || 'JavaScript',
-        extension: fileName.substring(fileName.lastIndexOf('.') + 1),
-        size: content.length,
-        complexity: 3,
-        summary: 'Direct user uploaded source file.'
-      };
-      setFiles(prev => [...prev.filter(f => f.filePath !== fileName), newFile]);
-      return true;
+      console.warn('Backend unavailable while uploading code.');
+      return false;
     }
   };
 
@@ -457,16 +290,18 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         headers: getHeaders(),
       });
 
-      // Poll progress
+      // Poll only progress text — do NOT reload all project data on each tick
+      // Full reload (selectProject) happens once when analysis finishes
       const poll = setInterval(async () => {
         try {
           const res = await fetch(`${API_BASE}/analysis/${projectId}/progress`, { headers: getHeaders() });
           if (res.ok) {
             const progress = await res.text();
             setActiveProgress(progress);
-            await selectProject(projectId);
             if (progress === 'Ready' || progress.startsWith('Error')) {
               clearInterval(poll);
+              // Single full refresh once analysis is done
+              await selectProject(projectId);
               if (!progress.startsWith('Error')) {
                 setActiveProgress('Ready');
               }
@@ -483,26 +318,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }, 2000);
     } catch (err) {
-      console.warn('Backend offline, running simulated progress pipeline.');
-      const stages = [
-        'Cloning Repository... (15%)',
-        'Reading Files and Detecting Languages... (30%)',
-        'Finding Dependencies and Generating SBOM... (50%)',
-        'Running Security Scanner... (70%)',
-        'Creating AI Knowledge Base... (85%)',
-        'Generating Architecture & Documentation... (95%)',
-        'Ready'
-      ];
-      let i = 0;
-      const poll = setInterval(async () => {
-        setActiveProgress(stages[i]);
-        if (stages[i] === 'Ready') {
-          clearInterval(poll);
-          await selectProject(projectId);
-          setFiles(prev => prev.length > 0 ? prev : getMockFilesForProject(selectedProject));
-        }
-        i++;
-      }, 800);
+      console.warn('Backend unavailable while starting analysis.');
+      setActiveProgress('Error: Backend unavailable while starting analysis.');
     }
   };
 
@@ -553,29 +370,17 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setChatHistory(prev => [...prev, aiErrorMsg]);
       return errorMsg;
     } catch (err) {
-      console.warn('Backend chat offline, generating smart simulated context answer.');
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let reply = `Based on the repository index, I searched for classes referencing \`${text}\`:\n\n`;
-          if (text.toLowerCase().includes('auth') || text.toLowerCase().includes('jwt')) {
-            reply += `The authentication config utilizes a stateless security filter chain. \`JwtAuthenticationFilter\` intercepts requests, validating base64 signed JWT tokens from the Authorization HTTP header.`;
-          } else if (text.toLowerCase().includes('db') || text.toLowerCase().includes('sql') || text.toLowerCase().includes('database')) {
-            reply += `The database mapper layer maps classes to schema tables using JPA. \`OwnerRepository\` extends \`JpaRepository\` to query tables, but notice dynamic statements in \`OwnerController.java\` line 45 which has a SQL Injection risk flags.`;
-          } else {
-            reply += `The repository exposes modular controllers (like \`OwnerController\`) linking queries through the clinic services engine. You can trace its call flow directly inside the Visualizations node map dashboard.`;
-          }
-
-          const aiMsg: ChatMessage = {
-            id: Date.now() + 1,
-            sender: 'AI',
-            messageText: reply,
-            relevantFiles: JSON.stringify(['src/main/java/com/petclinic/controller/OwnerController.java']),
-            timestamp: new Date().toISOString()
-          };
-          setChatHistory(prev => [...prev, aiMsg]);
-          resolve(reply);
-        }, 1000);
-      });
+      console.warn('Backend unavailable while sending chat message.');
+      const reply = 'Backend unavailable. Reconnect to the deployed API and run repository analysis before asking questions about this project.';
+      const aiMsg: ChatMessage = {
+        id: Date.now() + 1,
+        sender: 'AI',
+        messageText: reply,
+        relevantFiles: JSON.stringify([]),
+        timestamp: new Date().toISOString()
+      };
+      setChatHistory(prev => [...prev, aiMsg]);
+      return reply;
     }
   };
 
@@ -715,73 +520,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setGraphData({ nodes: flowNodes, edges: flowEdges });
       }
     } catch (err) {
-      console.warn('Backend offline, loading mock React Flow nodes.');
-      // Create custom layout nodes for local mock tree
-      if (visualType === 'tree') {
-        setGraphData({
-          nodes: [
-            { id: 'root', type: 'input', data: { label: 'Project Root' }, position: { x: 250, y: 20 }, style: { background: '#1E293B', color: '#FFF', border: '1px solid #6366F1', width: 160 } },
-            { id: 'src', type: 'default', data: { label: 'src/ (folder)' }, position: { x: 150, y: 120 }, style: { background: 'rgba(30,41,59,0.8)', color: '#FFF', width: 140 } },
-            { id: 'pom', type: 'output', data: { label: 'pom.xml (file)', filePath: 'pom.xml' }, position: { x: 380, y: 120 }, style: { background: 'rgba(99, 102, 241, 0.2)', color: '#FFF', width: 140 } },
-            { id: 'main', type: 'default', data: { label: 'src/main/java (folder)' }, position: { x: 80, y: 220 }, style: { background: 'rgba(30,41,59,0.8)', color: '#FFF', width: 160 } },
-            { id: 'resources', type: 'output', data: { label: 'src/main/resources', filePath: 'src/main/resources/application.properties' }, position: { x: 270, y: 220 }, style: { background: 'rgba(30,41,59,0.8)', color: '#FFF', width: 160 } },
-            { id: 'app', type: 'output', data: { label: 'PetclinicApplication.java', filePath: 'src/main/java/com/petclinic/PetclinicApplication.java' }, position: { x: 20, y: 320 }, style: { background: 'rgba(236,72,153,0.2)', color: '#FFF', width: 180 } },
-            { id: 'ctrl', type: 'output', data: { label: 'OwnerController.java', filePath: 'src/main/java/com/petclinic/controller/OwnerController.java' }, position: { x: 220, y: 320 }, style: { background: 'rgba(99,102,241,0.2)', color: '#FFF', width: 180 } }
-          ],
-          edges: [
-            { id: 'r-s', source: 'root', target: 'src', style: { stroke: '#6366F1' } },
-            { id: 'r-p', source: 'root', target: 'pom', style: { stroke: '#6366F1' } },
-            { id: 's-m', source: 'src', target: 'main', style: { stroke: '#6366F1' } },
-            { id: 's-res', source: 'src', target: 'resources', style: { stroke: '#6366F1' } },
-            { id: 'm-a', source: 'main', target: 'app', style: { stroke: '#6366F1' } },
-            { id: 'm-c', source: 'main', target: 'ctrl', style: { stroke: '#6366F1' } }
-          ]
-        });
-      } else if (visualType === 'dependencies') {
-        setGraphData({
-          nodes: [
-            { id: 'app', type: 'input', data: { label: 'Primary Application' }, position: { x: 250, y: 20 }, style: { background: '#1E293B', color: '#FFF', width: 180 } },
-            { id: 'spring-web', type: 'output', data: { label: 'spring-boot-starter-web (3.1.2)' }, position: { x: 50, y: 150 }, style: { background: 'rgba(16, 185, 129, 0.2)', color: '#FFF', width: 220 } },
-            { id: 'spring-sec', type: 'output', data: { label: 'spring-boot-starter-security (3.1.2)' }, position: { x: 300, y: 150 }, style: { background: 'rgba(16, 185, 129, 0.2)', color: '#FFF', width: 220 } },
-            { id: 'log4j', type: 'output', data: { label: 'log4j-core (2.14.0) [VULNERABLE]' }, position: { x: 175, y: 260 }, style: { background: 'rgba(239, 68, 68, 0.2)', color: '#FFF', border: '1px solid #EF4444', width: 250 } }
-          ],
-          edges: [
-            { id: 'a-sw', source: 'app', target: 'spring-web', animated: true, style: { stroke: '#10B981' } },
-            { id: 'a-ss', source: 'app', target: 'spring-sec', animated: true, style: { stroke: '#10B981' } },
-            { id: 'a-l4j', source: 'app', target: 'log4j', animated: true, style: { stroke: '#EF4444' } }
-          ]
-        });
-      } else if (visualType === 'flow') {
-        setGraphData({
-          nodes: [
-            { id: 'ctrl', type: 'input', data: { label: 'OwnerController.java' }, position: { x: 20, y: 100 }, style: { background: '#6366F1', color: '#FFF', width: 160 } },
-            { id: 'svc', type: 'default', data: { label: 'ClinicService.java' }, position: { x: 220, y: 100 }, style: { background: '#8B5CF6', color: '#FFF', width: 160 } },
-            { id: 'rep', type: 'default', data: { label: 'OwnerRepository.java' }, position: { x: 420, y: 100 }, style: { background: '#EC4899', color: '#FFF', width: 160 } },
-            { id: 'model', type: 'output', data: { label: 'Owner.java' }, position: { x: 620, y: 100 }, style: { background: '#1E293B', color: '#FFF', width: 160 } }
-          ],
-          edges: [
-            { id: 'c-s', source: 'ctrl', target: 'svc', label: 'invokes', animated: true, style: { stroke: '#6366F1' } },
-            { id: 's-r', source: 'svc', target: 'rep', label: 'queries', animated: true, style: { stroke: '#8B5CF6' } },
-            { id: 'r-m', source: 'rep', target: 'model', label: 'maps', style: { stroke: '#EC4899' } }
-          ]
-        });
-      } else if (visualType === 'data') {
-        setGraphData({
-          nodes: [
-            { id: 'input-user', type: 'input', data: { label: 'User Input / Client Request' }, position: { x: 250, y: 20 }, style: { background: '#1E293B', color: '#FFF', width: 220 } },
-            { id: 'ep-login', type: 'default', data: { label: 'Endpoint: /api/auth/login' }, position: { x: 100, y: 150 }, style: { background: 'rgba(99, 102, 241, 0.8)', color: '#FFF', width: 200 } },
-            { id: 'ep-projects', type: 'default', data: { label: 'Endpoint: /api/projects' }, position: { x: 380, y: 150 }, style: { background: 'rgba(99, 102, 241, 0.8)', color: '#FFF', width: 200 } },
-            { id: 'tbl-users', type: 'output', data: { label: 'Table: users' }, position: { x: 100, y: 280 }, style: { background: '#0F172A', color: '#FFF', width: 180 } },
-            { id: 'tbl-projects', type: 'output', data: { label: 'Table: projects' }, position: { x: 380, y: 280 }, style: { background: '#0F172A', color: '#FFF', width: 180 } }
-          ],
-          edges: [
-            { id: 'u-l', source: 'input-user', target: 'ep-login', animated: true, style: { stroke: '#6366F1' } },
-            { id: 'u-p', source: 'input-user', target: 'ep-projects', animated: true, style: { stroke: '#6366F1' } },
-            { id: 'l-u', source: 'ep-login', target: 'tbl-users', animated: true, style: { stroke: '#10B981' } },
-            { id: 'p-pr', source: 'ep-projects', target: 'tbl-projects', animated: true, style: { stroke: '#10B981' } }
-          ]
-        });
-      }
+      console.warn(`Backend unavailable while loading ${visualType} visualization.`);
+      setGraphData({ nodes: [], edges: [] });
     }
   };
 

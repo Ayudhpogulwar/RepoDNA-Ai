@@ -14,11 +14,34 @@ import {
 export const SecurityScanPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { securityIssues, securityRecommendations, selectedProject } = useAnalysis();
+  const { securityIssues, securityRecommendations, selectedProject, dependencies } = useAnalysis();
 
-  const highIssues = securityIssues.filter(i => i.severity === 'HIGH');
-  const mediumIssues = securityIssues.filter(i => i.severity === 'MEDIUM');
-  const lowIssues = securityIssues.filter(i => i.severity === 'LOW');
+  // Merge vulnerable/outdated SBOM dependencies as HIGH security issues so
+  // SBOM DB and Security Scan always show consistent numbers.
+  const depIssues: import('../context/AnalysisContext').SecurityIssue[] = dependencies
+    .filter(d => d.vulnerabilityStatus === 'VULNERABLE' || d.vulnerabilityStatus === 'OUTDATED')
+    .map(d => ({
+      filePath: 'Dependency Manifest',
+      line: 0,
+      type: 'OUTDATED_PACKAGE',
+      severity: (d.vulnerabilityStatus === 'VULNERABLE' ? 'HIGH' : 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW',
+      description: `${d.vulnerabilityStatus === 'VULNERABLE' ? 'Vulnerable' : 'Outdated'} dependency: ${d.name} v${d.version} — flagged in SBOM scan.`,
+      recommendation: `Upgrade ${d.name} to the latest secure version and re-run analysis.`,
+    }));
+
+  // Deduplicate: skip dep issues already present in the stored security report
+  const existingDepNames = new Set(
+    securityIssues
+      .filter(i => i.type === 'OUTDATED_PACKAGE')
+      .map(i => i.description)
+  );
+  const uniqueDepIssues = depIssues.filter(i => !existingDepNames.has(i.description));
+
+  const allIssues = [...securityIssues, ...uniqueDepIssues];
+
+  const highIssues   = allIssues.filter(i => i.severity === 'HIGH');
+  const mediumIssues = allIssues.filter(i => i.severity === 'MEDIUM');
+  const lowIssues    = allIssues.filter(i => i.severity === 'LOW');
 
   const getSeverityStyle = (severity: 'HIGH' | 'MEDIUM' | 'LOW') => {
     switch (severity) {
@@ -93,8 +116,8 @@ export const SecurityScanPage: React.FC = () => {
         {/* Vulnerabilities List */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-lg font-bold text-white mb-2">Detailed Vulnerability Log</h3>
-          {securityIssues.length > 0 ? (
-            securityIssues.map((issue, idx) => (
+          {allIssues.length > 0 ? (
+            allIssues.map((issue, idx) => (
               <div 
                 key={idx}
                 className="glass-card rounded-2xl p-6 border border-white/5 hover:border-indigo-500/20 flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all"

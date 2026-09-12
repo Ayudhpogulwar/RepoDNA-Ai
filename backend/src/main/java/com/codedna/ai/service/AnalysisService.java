@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 import com.codedna.ai.model.Dependency;
 import com.codedna.ai.model.Project;
@@ -28,9 +26,6 @@ import com.codedna.ai.repository.AnalysisRunRepository;
 @Service
 public class AnalysisService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalysisService.class);
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     private final GitService gitService;
     private final FileAnalyzerService fileAnalyzerService;
@@ -84,110 +79,25 @@ public class AnalysisService {
     @Transactional
     public Project analyzeGitRepository(Project project, String geminiKey, String openaiKey, String devLevel) {
         Long id = project.getId();
+        File clonedDir = null;
         try {
             projectAnalysisProgress.put(id, "Cloning Repository... (15%)");
-            File clonedDir = gitService.cloneRepository(project.getGitUrl());
+            clonedDir = gitService.cloneRepository(project.getGitUrl());
             project.setLocalPath(clonedDir.getAbsolutePath());
             projectRepository.save(project);
 
             Project result = analyzeLocalPath(project, clonedDir, geminiKey, openaiKey, devLevel);
             
-            // Clean up cloned files to save space after analyzing/indexing into database
-            gitService.cleanDirectory(clonedDir);
             projectAnalysisProgress.put(id, "Ready");
             return result;
         } catch (Exception e) {
             log.error("Failed to clone/analyze repository {}: {}", project.getName(), e.getMessage(), e);
-            createFallbackProjectFiles(project, e.getMessage());
-            projectAnalysisProgress.put(id, "Ready");
+            projectAnalysisProgress.put(id, "Error: " + e.getMessage());
             return project;
-        }
-    }
-
-    private void createFallbackProjectFiles(Project project, String errorMessage) {
-        try {
-            List<ProjectFile> files = new java.util.ArrayList<>();
-            String rawName = project.getName() != null ? project.getName() : "Project";
-            String mainName = rawName.replaceAll("[^a-zA-Z0-9]", "");
-            if (mainName.isEmpty()) mainName = "App";
-
-            String appClass = mainName + "Application";
-            String ctrlClass = mainName + "Controller";
-            
-            ProjectFile f1 = ProjectFile.builder()
-                    .project(project)
-                    .fileName(appClass + ".java")
-                    .filePath("src/main/java/com/codedna/" + appClass + ".java")
-                    .content("package com.codedna;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\n\n@SpringBootApplication\npublic class " + appClass + " {\n    public static void main(String[] args) {\n        SpringApplication.run(" + appClass + ".class, args);\n    }\n}")
-                    .language("Java")
-                    .extension("java")
-                    .size(350L)
-                    .complexity(1)
-                    .summary("Main Spring Boot Application entry point.")
-                    .build();
-
-            ProjectFile f2 = ProjectFile.builder()
-                    .project(project)
-                    .fileName(ctrlClass + ".java")
-                    .filePath("src/main/java/com/codedna/controller/" + ctrlClass + ".java")
-                    .content("package com.codedna.controller;\n\nimport org.springframework.web.bind.annotation.*;\n\n@RestController\n@RequestMapping(\"/api\")\npublic class " + ctrlClass + " {\n    @GetMapping(\"/status\")\n    public String getStatus() {\n        return \"Operational\";\n    }\n}")
-                    .language("Java")
-                    .extension("java")
-                    .size(450L)
-                    .complexity(3)
-                    .summary("REST API controller handling web endpoint routing.")
-                    .build();
-
-            ProjectFile f3 = ProjectFile.builder()
-                    .project(project)
-                    .fileName("pom.xml")
-                    .filePath("pom.xml")
-                    .content("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n    <modelVersion>4.0.0</modelVersion>\n    <groupId>com.codedna</groupId>\n    <artifactId>" + rawName.toLowerCase().replaceAll("[^a-z0-9]", "-") + "</artifactId>\n    <version>1.0.0</version>\n    <dependencies>\n        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-web</artifactId>\n            <version>3.1.2</version>\n        </dependency>\n        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-security</artifactId>\n            <version>3.1.2</version>\n        </dependency>\n    </dependencies>\n</project>")
-                    .language("XML")
-                    .extension("xml")
-                    .size(650L)
-                    .complexity(1)
-                    .summary("Maven build dependency manifest.")
-                    .build();
-
-            files.add(f1);
-            files.add(f2);
-            files.add(f3);
-
-            deleteExistingProjectData(project, true);
-            projectFileRepository.saveAll(files);
-
-            List<Dependency> dependencies = fileAnalyzerService.parseDependencies(project, files);
-            if (dependencies.isEmpty()) {
-                dependencies.add(Dependency.builder()
-                        .project(project)
-                        .name("org.springframework.boot:spring-boot-starter-web")
-                        .version("3.1.2")
-                        .type("MAVEN")
-                        .vulnerabilityStatus("SECURE")
-                        .license("Apache-2.0")
-                        .description("Web framework core")
-                        .build());
+        } finally {
+            if (clonedDir != null && clonedDir.exists()) {
+                gitService.cleanDirectory(clonedDir);
             }
-            dependencyRepository.saveAll(dependencies);
-
-            SBOMReport sbom = sbomService.generateSbom(project, dependencies, "CycloneDX");
-            sbomReportRepository.save(sbom);
-
-            SecurityReport securityReport = securityService.runScan(project, files, dependencies);
-            securityReportRepository.save(securityReport);
-
-            vectorStoreService.indexProjectFiles(project.getId(), files);
-
-            project.setHealthScore(85);
-            project.setSecurityScore(90);
-            project.setFrameworks("Spring Boot");
-            project.setLanguages("Java, XML");
-            project.setSummary("Workspace initialized for " + rawName + ". Parsed initial source entrypoints and controller configurations.");
-            project.setLearningRoadmap("Day 1: Inspect application entry points.\nDay 2: Audit REST controllers.\nDay 3: Review security filters.");
-            projectRepository.save(project);
-        } catch (Exception ex) {
-            log.error("Error creating fallback project files: {}", ex.getMessage(), ex);
         }
     }
 
@@ -195,7 +105,7 @@ public class AnalysisService {
     public Project analyzeLocalDirectory(Project project, File directory, String geminiKey, String openaiKey, String devLevel) {
         Long id = project.getId();
         try {
-            if (project.getLocalPath() != null && !project.getLocalPath().isEmpty() && !project.getLocalPath().equals(".")) {
+            if (directory != null && directory.exists() && (project.getLocalPath() == null || project.getLocalPath().isEmpty() || project.getLocalPath().equals("."))) {
                 project.setLocalPath(directory.getAbsolutePath());
                 projectRepository.save(project);
             }
@@ -205,39 +115,47 @@ public class AnalysisService {
             return result;
         } catch (Exception e) {
             log.error("Failed to analyze folder {}: {}", project.getName(), e.getMessage());
-            createFallbackProjectFiles(project, e.getMessage());
-            projectAnalysisProgress.put(id, "Ready");
+            projectAnalysisProgress.put(id, "Error: " + e.getMessage());
             return project;
         }
     }
 
     private Project analyzeLocalPath(Project project, File dir, String geminiKey, String openaiKey, String devLevel) throws Exception {
         Long id = project.getId();
-        List<ProjectFile> files;
+        List<ProjectFile> files = new java.util.ArrayList<>();
 
-        boolean scanLocalPath = false;
+        boolean scanLocalDisk = false;
         File scanDir = null;
-        if (project.getLocalPath() != null && !project.getLocalPath().trim().isEmpty() && !project.getLocalPath().equals(".")) {
+
+        // 1. Check if provided directory exists on disk
+        if (dir != null && dir.exists() && dir.isDirectory()) {
+            scanLocalDisk = true;
+            scanDir = dir;
+        } else if (project.getLocalPath() != null && !project.getLocalPath().trim().isEmpty() && !project.getLocalPath().equals(".")) {
             File localFile = new File(project.getLocalPath());
-            if (localFile.exists()) {
-                scanLocalPath = true;
+            if (localFile.exists() && localFile.isDirectory()) {
+                scanLocalDisk = true;
                 scanDir = localFile;
             }
         }
 
-        boolean deleteFilesOnClean = false;
-        if (project.getType() == Project.ProjectType.REPOSITORY || scanLocalPath) {
-            // 1. Scan and read file structure from cloned repository or local disk path
+        // Always purge old reports (sbom, security, dependencies) before re-analysis
+        // to prevent duplicate key constraint violations on retry.
+        // Only purge project_files when we are about to rescan from disk.
+        deleteExistingProjectData(project, scanLocalDisk);
+
+        if (scanLocalDisk && scanDir != null) {
             projectAnalysisProgress.put(id, "Reading Files and Detecting Languages... (30%)");
-            files = fileAnalyzerService.analyzeProjectFiles(project, scanDir != null ? scanDir : dir);
-            deleteFilesOnClean = true;
+            files = fileAnalyzerService.analyzeProjectFiles(project, scanDir);
+            if (!files.isEmpty()) {
+                projectFileRepository.saveAll(files);
+            }
         } else {
-            // For FOLDER and FILE projects, files are uploaded directly via REST API.
-            // Load them from the database instead of scanning the backend root dir.
+            // Check existing files in DB (e.g. uploaded files or previously indexed)
             projectAnalysisProgress.put(id, "Reading Uploaded Files... (30%)");
             files = projectFileRepository.findByProject(project);
 
-            // Recalculate/update complexity, language, etc., for uploaded files
+            // Recalculate complexity for DB files if needed
             for (ProjectFile f : files) {
                 if (f.getContent() != null && (f.getComplexity() == null || f.getComplexity() <= 1)) {
                     int complexity = fileAnalyzerService.estimateComplexity(f.getContent(), f.getLanguage());
@@ -247,12 +165,7 @@ public class AnalysisService {
         }
 
         if (files == null || files.isEmpty()) {
-            createFallbackProjectFiles(project, "No readable source files found in target directory.");
-            files = projectFileRepository.findByProject(project);
-        } else {
-            // Save files immediately after reading so they are queryable in Code Explorer right away
-            deleteExistingProjectData(project, deleteFilesOnClean);
-            projectFileRepository.saveAll(files);
+            throw new Exception("No readable source files found in workspace/repository.");
         }
 
         // 2. Parse dependencies
@@ -367,25 +280,31 @@ public class AnalysisService {
 
     private void deleteExistingProjectData(Project project, boolean deleteFiles) {
         log.info("Cleaning up previous analysis data for project ID: {}, deleteFiles={}", project.getId(), deleteFiles);
-        
-        entityManager.createNativeQuery("DELETE FROM sbom_reports WHERE project_id = ?")
-                .setParameter(1, project.getId())
-                .executeUpdate();
-                
-        entityManager.createNativeQuery("DELETE FROM security_reports WHERE project_id = ?")
-                .setParameter(1, project.getId())
-                .executeUpdate();
-                
-        entityManager.createNativeQuery("DELETE FROM dependencies WHERE project_id = ?")
-                .setParameter(1, project.getId())
-                .executeUpdate();
-                
-        if (deleteFiles) {
-            entityManager.createNativeQuery("DELETE FROM project_files WHERE project_id = ?")
-                    .setParameter(1, project.getId())
-                    .executeUpdate();
+
+        // Use JPA repositories so deletes are flushed to DB immediately,
+        // preventing duplicate-key violations on the unique sbom_reports/security_reports constraints.
+        sbomReportRepository.findByProject(project).ifPresent(r -> {
+            sbomReportRepository.delete(r);
+            sbomReportRepository.flush();
+        });
+
+        securityReportRepository.findByProject(project).ifPresent(r -> {
+            securityReportRepository.delete(r);
+            securityReportRepository.flush();
+        });
+
+        List<com.codedna.ai.model.Dependency> existingDeps = dependencyRepository.findByProject(project);
+        if (!existingDeps.isEmpty()) {
+            dependencyRepository.deleteAll(existingDeps);
+            dependencyRepository.flush();
         }
-                
-        entityManager.flush();
+
+        if (deleteFiles) {
+            List<com.codedna.ai.model.ProjectFile> existingFiles = projectFileRepository.findByProject(project);
+            if (!existingFiles.isEmpty()) {
+                projectFileRepository.deleteAll(existingFiles);
+                projectFileRepository.flush();
+            }
+        }
     }
 }

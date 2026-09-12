@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE, AUTH_API_BASE } from '../config/api';
 
 interface User {
   id: number;
@@ -19,9 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const RAW_API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
-const API_BASE = `${RAW_API_BASE}/auth`;
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('codedna_token'));
@@ -39,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, 1500);
 
       try {
-        const res = await fetch(`${RAW_API_BASE}/health`, { cache: 'no-store' });
+        const res = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
         if (res.ok) {
           console.log('[Keep-Alive] Backend health ping OK');
         }
@@ -71,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
-        const res = await fetch(`${API_BASE}/me`, {
+        const res = await fetch(`${AUTH_API_BASE}/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -82,19 +80,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('codedna_email', data.email);
           setUser(data);
         } else {
-          // Token expired or invalid
           logout();
         }
       } catch (err) {
-        console.warn('Backend offline, using simulated session.');
-        const cachedUsername = localStorage.getItem('codedna_username') || 'ayudh';
-        const cachedEmail = localStorage.getItem('codedna_email') || 'ayudh@gmail.com';
-        setUser({ 
-          id: 1, 
-          username: cachedUsername, 
-          email: cachedEmail, 
-          role: cachedUsername === 'admin' ? 'ROLE_ADMIN' : 'ROLE_USER' 
-        });
+        console.warn('Backend unavailable while loading profile.');
+        logout();
       } finally {
         setLoading(false);
       }
@@ -105,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/login`, {
+      const res = await fetch(`${AUTH_API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -122,20 +112,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     } catch (err) {
-      console.warn('Backend login offline, simulating success.');
-      const mockToken = 'mock_jwt_token_payload';
-      localStorage.setItem('codedna_token', mockToken);
-      localStorage.setItem('codedna_username', username);
-      localStorage.setItem('codedna_email', `${username}@gmail.com`);
-      setToken(mockToken);
-      setUser({ id: 1, username, email: `${username}@gmail.com`, role: 'ROLE_USER' });
-      return true;
+      console.warn('Backend unavailable during login.');
+      return false;
     }
   };
 
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/register`, {
+      const res = await fetch(`${AUTH_API_BASE}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -152,14 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     } catch (err) {
-      console.warn('Backend register offline, simulating success.');
-      const mockToken = 'mock_jwt_token_payload';
-      localStorage.setItem('codedna_token', mockToken);
-      localStorage.setItem('codedna_username', username);
-      localStorage.setItem('codedna_email', email);
-      setToken(mockToken);
-      setUser({ id: 1, username, email, role: 'ROLE_USER' });
-      return true;
+      console.warn('Backend unavailable during registration.');
+      return false;
     }
   };
 

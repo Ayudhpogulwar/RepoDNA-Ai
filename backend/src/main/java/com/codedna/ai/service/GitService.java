@@ -19,6 +19,11 @@ public class GitService {
     private String baseUploadDir;
 
     public File cloneRepository(String gitUrl) throws GitAPIException, IOException {
+        String url = gitUrl != null ? gitUrl.trim().replaceAll("[\"']", "") : "";
+        if (url.isEmpty()) {
+            throw romanticGitError("Git URL is required and cannot be empty.");
+        }
+
         String uniqueDirName = "repo-" + UUID.randomUUID().toString();
         File targetDir = new File(baseUploadDir, uniqueDirName);
         
@@ -26,19 +31,47 @@ public class GitService {
             Files.createDirectories(targetDir.toPath());
         }
 
-        log.info("Cloning repository {} into {}", gitUrl, targetDir.getAbsolutePath());
+        log.info("Cloning repository {} into {}", url, targetDir.getAbsolutePath());
         
+        // Attempt 1: JGit
         try (Git git = Git.cloneRepository()
-                .setURI(gitUrl)
+                .setURI(url)
                 .setDirectory(targetDir)
                 .setCloneAllBranches(false)
                 .setCloneSubmodules(false)
                 .setNoTags()
                 .call()) {
-            log.info("Successfully cloned {}", gitUrl);
+            log.info("Successfully cloned {} via JGit", url);
+            return targetDir;
+        } catch (Exception jgitEx) {
+            log.warn("JGit clone failed for {}: {}. Attempting native git CLI clone fallback...", url, jgitEx.getMessage());
+            
+            // Attempt 2: Native System Git CLI
+            try {
+                ProcessBuilder pb = new ProcessBuilder("git", "clone", "--depth", "1", url, targetDir.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                
+                String processOutput = new String(process.getInputStream().readAllBytes());
+                int exitCode = process.waitFor();
+                
+                if (exitCode == 0) {
+                    log.info("Successfully cloned {} via native git CLI", url);
+                    return targetDir;
+                } else {
+                    String cleanErr = processOutput.trim();
+                    log.error("Native git clone failed with exit code {}: {}", exitCode, cleanErr);
+                    throw new IOException(cleanErr.isEmpty() ? "Git clone returned exit code " + exitCode : cleanErr);
+                }
+            } catch (Exception cliEx) {
+                log.error("Native git CLI clone failed: {}", cliEx.getMessage());
+                throw new IOException("Failed to clone repository: " + jgitEx.getMessage() + " (CLI: " + cliEx.getMessage() + ")");
+            }
         }
-        
-        return targetDir;
+    }
+
+    private IOException romanticGitError(String message) {
+        return new IOException(message);
     }
 
     public void cleanDirectory(File dir) {

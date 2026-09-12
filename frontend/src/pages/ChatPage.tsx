@@ -17,6 +17,7 @@ export const ChatPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevLengthRef = useRef<number>(0);
 
   const suggestionChips = [
     'Explain authentication flow',
@@ -26,8 +27,12 @@ export const ChatPage: React.FC = () => {
     'Generate developer learning roadmap'
   ];
 
+  // Only auto-scroll when a NEW message is added, not on re-renders
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatHistory.length > prevLengthRef.current) {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevLengthRef.current = chatHistory.length;
   }, [chatHistory]);
 
   const handleSend = async (text: string) => {

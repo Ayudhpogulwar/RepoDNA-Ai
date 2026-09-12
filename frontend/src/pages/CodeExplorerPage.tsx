@@ -4,6 +4,7 @@ import { useAnalysis } from '../context/AnalysisContext';
 import type { ProjectFile } from '../context/AnalysisContext';
 import { File, Search, Sparkles, Cpu, Loader2 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
+import { API_BASE } from '../config/api';
 
 export const CodeExplorerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,12 @@ export const CodeExplorerPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [aiExplanation, setAiExplanation] = useState('Select a file to run AI Code DNA explanation...');
   const [explaining, setExplaining] = useState(false);
+
+  useEffect(() => {
+    setSelectedFile(null);
+    setEditorContent('');
+    setAiExplanation('Select a file to run AI Code DNA explanation...');
+  }, [id]);
 
   const renderMarkdownAsHtml = (md: string) => {
     if (!md) return '';
@@ -65,7 +72,6 @@ export const CodeExplorerPage: React.FC = () => {
 
   const handleFileClick = async (filePath: string) => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
       const res = await fetch(`${API_BASE}/projects/${id}/files/detail?path=${encodeURIComponent(filePath)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('codedna_token')}`,
@@ -85,26 +91,18 @@ export const CodeExplorerPage: React.FC = () => {
     }
 
     const found = files.find(f => f.filePath === filePath);
-    if (found) {
-      setSelectedFile(found);
-      if (found.content && found.content.trim().length > 0) {
-        setEditorContent(found.content);
-      } else {
-        let generatedCode = `// File: ${found.fileName}\n// CodeDNA indexed module\n\n`;
-        if (found.fileName.endsWith('.java')) {
-          const className = found.fileName.replace('.java', '');
-          generatedCode += `package com.codedna;\n\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class ${className} {\n    public void process() {\n        System.out.println("Processing ${className} workflow...");\n    }\n}`;
-        } else if (found.fileName.endsWith('.properties') || found.fileName.endsWith('.yml')) {
-          generatedCode += `# CodeDNA Configuration\napp.name=${found.fileName.split('.')[0]}\nserver.port=8080\nspring.datasource.url=jdbc:mysql://localhost:3306/codedna`;
-        } else if (found.fileName.endsWith('.xml')) {
-          generatedCode += `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0">\n    <modelVersion>4.0.0</modelVersion>\n    <artifactId>${found.fileName.replace('.xml', '')}</artifactId>\n</project>`;
+      if (found) {
+        setSelectedFile(found);
+        if (found.content && found.content.trim().length > 0) {
+          setEditorContent(found.content);
         } else {
-          generatedCode += `export const ${found.fileName.replace(/\.[^/.]+$/, "")} = () => {\n  console.log("Module initialized");\n};`;
-        }
-        setEditorContent(generatedCode);
+        setEditorContent('');
+        setAiExplanation('The file was indexed, but its source content is not available from the backend yet. Re-run repository analysis to refresh the stored file content.');
       }
     }
-    setAiExplanation('Click "Explain Code" below to generate AI code analysis.');
+    if (found?.content && found.content.trim().length > 0) {
+      setAiExplanation('Click "Explain Code" below to generate AI code analysis.');
+    }
   };
 
   const getMonacoLanguage = (lang: string) => {
@@ -126,7 +124,6 @@ export const CodeExplorerPage: React.FC = () => {
     setExplaining(true);
     setAiExplanation('Analyzing AST patterns and generating summary...');
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
       const res = await fetch(`${API_BASE}/chat/${id}`, {
         method: 'POST',
         headers: {

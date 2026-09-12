@@ -34,8 +34,8 @@ app:
     # Gemini API configurations. Defaults to a dummy key if not specified, 
     # but the service will handle empty keys gracefully.
     gemini:
-      key: AIzaSyC3fxUG4wL1xe0pGJcbvvLfJY9lss-LJzs
-      model: gemini-1.5-flash
+      key: ${GEMINI_API_KEY:}
+      model: gemini-3.6-flash
     openai:
       key: ${OPENAI_API_KEY:}
       model: gpt-4o-mini
