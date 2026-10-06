@@ -106,6 +106,7 @@ public class AIService {
             }
         }
         return callOpenAI(system, user, activeOpenaiKey); // Fallback to OpenAI if all Gemini models fail
+    }
 
     private String callOpenAI(String system, String user, String activeKey) {
         if (activeKey == null || activeKey.trim().isEmpty()) {
