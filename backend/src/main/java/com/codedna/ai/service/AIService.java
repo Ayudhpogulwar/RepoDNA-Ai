@@ -16,13 +16,13 @@ public class AIService {
     @Value("${app.ai.gemini.key:}")
     private String geminiKey;
 
-    @Value("${app.ai.gemini.model}")
+    @Value("${app.ai.gemini.model:gemini-flash-latest}")
     private String geminiModel;
 
     @Value("${app.ai.openai.key:}")
     private String openaiKey;
 
-    @Value("${app.ai.openai.model}")
+    @Value("${app.ai.openai.model:gpt-4o-mini}")
     private String openaiModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -62,47 +62,50 @@ public class AIService {
     }
 
     private String callGemini(String system, String user, String activeGeminiKey, String activeOpenaiKey) {
-        try {
-            String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", geminiModel, activeGeminiKey);
+        String primary = (geminiModel != null && !geminiModel.trim().isEmpty()) ? geminiModel : "gemini-flash-latest";
+        List<String> modelsToTry = List.of(primary, "gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash");
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        for (String modelName : modelsToTry) {
+            try {
+                String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, activeGeminiKey);
 
-            // Structure request body for Gemini API
-            Map<String, Object> body = new HashMap<>();
-            
-            Map<String, Object> textPart = new HashMap<>();
-            textPart.put("text", system + "\n\nUser Question:\n" + user);
-            
-            Map<String, Object> parts = new HashMap<>();
-            parts.put("parts", List.of(textPart));
-            
-            Map<String, Object> contents = new HashMap<>();
-            contents.put("contents", List.of(parts));
-            
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(contents, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                // Extract candidates.content.parts[0].text
-                List candidates = (List) response.getBody().get("candidates");
-                if (candidates != null && !candidates.isEmpty()) {
-                    Map candidate = (Map) candidates.get(0);
-                    Map content = (Map) candidate.get("content");
-                    if (content != null) {
-                        List partsList = (List) content.get("parts");
-                        if (partsList != null && !partsList.isEmpty()) {
-                            Map part = (Map) partsList.get(0);
-                            return (String) part.get("text");
+                Map<String, Object> textPart = new HashMap<>();
+                textPart.put("text", system + "\n\nUser Question:\n" + user);
+
+                Map<String, Object> parts = new HashMap<>();
+                parts.put("parts", List.of(textPart));
+
+                Map<String, Object> contents = new HashMap<>();
+                contents.put("contents", List.of(parts));
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(contents, headers);
+                ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    List candidates = (List) response.getBody().get("candidates");
+                    if (candidates != null && !candidates.isEmpty()) {
+                        Map candidate = (Map) candidates.get(0);
+                        Map content = (Map) candidate.get("content");
+                        if (content != null) {
+                            List partsList = (List) content.get("parts");
+                            if (partsList != null && !partsList.isEmpty()) {
+                                Map part = (Map) partsList.get(0);
+                                String generated = (String) part.get("text");
+                                if (generated != null && !generated.trim().isEmpty()) {
+                                    return generated;
+                                }
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                log.warn("Gemini model {} failed ({}), trying next candidate...", modelName, e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Error communicating with Gemini: {}", e.getMessage());
         }
-        return callOpenAI(system, user, activeOpenaiKey); // Fallback to OpenAI if Gemini fails
-    }
+        return callOpenAI(system, user, activeOpenaiKey); // Fallback to OpenAI if all Gemini models fail
 
     private String callOpenAI(String system, String user, String activeKey) {
         if (activeKey == null || activeKey.trim().isEmpty()) {
