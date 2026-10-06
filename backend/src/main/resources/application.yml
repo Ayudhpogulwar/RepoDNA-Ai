@@ -34,10 +34,10 @@ app:
     # Gemini API configurations. Defaults to a dummy key if not specified, 
     # but the service will handle empty keys gracefully.
     gemini:
-      key: ${GEMINI_API_KEY:}
-      model: gemini-3.6-flash
+      key: ${GEMINI_API_KEY:AIzaSyCxhcc7ztoiQj6Xp-LbLAQU0mLdgzhpt3I}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
     openai:
       key: ${OPENAI_API_KEY:}
-      model: gpt-4o-mini
+      model: ${OPENAI_MODEL:gpt-4o-mini}
   upload:
     dir: ${APP_UPLOAD_DIR:./uploads}
